@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+
+  <head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>
+    
+      How to debug ntp issues? &middot; Raghu Udiyar
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/public/css/poole.css">
+  <link rel="stylesheet" href="/public/css/syntax.css">
+  <link rel="stylesheet" href="/public/css/hyde.css">
+  <!--<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=PT+Sans:400,400italic,700|Abril+Fatface">-->
+  <link href='http://fonts.googleapis.com/css?family=Poiret+One' rel='stylesheet' type='text/css'>
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/public/apple-touch-icon-144-precomposed.png">
+  <link rel="shortcut icon" href="/public/favicon.ico">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/atom.xml">
+</head>
+
+
+  <body class="layout-reverse">
+
+    <div class="sidebar">
+  <div class="container sidebar-sticky">
+    <div class="sidebar-img">
+      <img src="//www.gravatar.com/avatar/8868c777e28f843dc1cb3093baeff5eb?s=400" />
+      </div>
+    <div class="sidebar-about">
+      <h1>
+        <a href="/">
+          Raghu Udiyar
+        </a>
+      </h1>
+      <p class="lead"></p>
+    </div>
+    <div class="sidebar-social">
+      <a href=https://twitter.com/rag_s><img src=/public/twitter.png></a>
+      <a href=https://github.com/raags><img src=/public/github.png></a>
+      <a href=/atom.xml><img src=/public/rss.png></a>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a class="sidebar-nav-item" href="/">Home</a>
+
+      
+
+      
+      
+        
+          
+        
+      
+        
+          
+            <a class="sidebar-nav-item" href="/about/">About</a>
+          
+        
+      
+        
+          
+            <a class="sidebar-nav-item" href="/archive/">Archive</a>
+          
+        
+      
+        
+      
+        
+          
+        
+      
+
+      <!--<a class="sidebar-nav-item" href="">GitHub project</a>-->
+      <!--<span class="sidebar-nav-item">Currently v</span>         -->
+    </nav>
+
+    <div class="sidebar-footer">
+      <p><small>Theme based on <a href=http://hyde.getpoole.com/>hyde</a><br/><small>&copy; 2015. All rights reserved.</small></p>
+    </div>
+  </div>
+</div>
+
+
+    <div class="content container">
+      <div class="post">
+  <h1 class="post-title">How to debug ntp issues?</h1>
+  <span class="post-date">17 Oct 2011</span>
+  <p><a title="NTP" href="http://en.wikipedia.org/wiki/Network_Time_Protocol" target="_blank">Ntp</a> has been the de-facto protocol used by computers to synchronize their clocks over a network, and maintain very accurate time, with as much as 10 millisecond precision. The ntp daemon or <a title="ntpd" href="http://en.wikipedia.org/wiki/Ntpd">ntpd</a> is the reference implementation, that can be found running on almost all Linux (and Unix) systems. This may change in the future though, as <a href="http://fedoraproject.org/wiki/Features/ChronyDefaultNTP" target="_blank">Chrony</a> is going to replace ntpd, and will be the default ntp client in Fedora 16. Nevertheless, many systems use ntpd, and I don't see it going away any time soon.</p>
+<p>In this post, we will take a brief look at how the ntp daemon works and look at ways to debug some common issues.</p>
+<!--more-->
+<p>When the ntp service first starts, a clock selection process begins, with the daemon polling the servers configured in ntp.conf, at 64 second intervals. Depending on the configuration, this process can take 5 to 10 minutes. To check the status, run the following :</p>
+<pre># ntpq
+ntpq&gt; peers
+     remote           refid           st t when poll reach   delay   offset  jitter
+=======================================================================================
+*time.ferea.org       8.16.24.15       2 u  972 1024  377   28.066   -0.181   4.126
++dg1.rieta.net        15.15.26.3       3 u  467 1024  377  141.664  -23.531   0.140
+ mighty.poclabs.      .STEP.          16 u    - 1024    0    0.000    0.000   0.000
+ LOCAL(0)             .LOCL.          10 l   32   64  377    0.000    0.000   0.001</pre>
+<p>During the clock selection process the refid column should read <strong>.INIT.</strong>  and the st (stratum) set to 16.</p>
+<p>The * indicates that this particular association is the chosen ntp source.<br />
+The  + indicates that this ntp <strong>peer</strong> is a candidate (a peer is a ntp server on the same stratum).<br />
+An empty space indicates that the server is unreachable and therefore rejected (stratum 16).</p>
+<p>If the current local time is greater than 1000 seconds, ntpd will not set the clock. The time can then be manually set using the "date" command or using "ntpdate" :</p>
+<pre># ntpdate time.ferea.org</pre>
+<p>If no ntp servers get selected, run the following :</p>
+<pre>ntpq&gt; as
+
+ind assID status  conf reach auth condition  last_event cnt
+===========================================================
+  1 29581  9624   yes   yes  none  sys.peer   reachable  1
+  2 29582  9014   yes   yes  none  candidat   reachable  1
+  4 29583  8000   yes   yes  none    reject
+  5 29584  9024   yes   yes  none    reject   reachable  2</pre>
+<p>The associations shown above correspond to the entries shown in the peer command. Most of the fields are self-explanatory,  except the status column. Use the table <a href="http://www.eecis.udel.edu/~mills/ntp/html/decode.html#peer" target="_blank">here</a> to decipher the status codes.</p>
+<p>Use the "assID" for the following command  :</p>
+<pre>ntpq&gt; rv 29583
+
+assID=62236 status=9014 reach, conf, 1 event, event_reach,
+srcadr=192.168.23.1, srcport=123, dstadr=192.168.247.11, dstport=123,
+leap=00, stratum=3, precision=-6, rootdelay=218.750,
+rootdispersion=1381.516, refid=24.1.4.14, reach=377, unreach=0,
+hmode=3, pmode=4, hpoll=10, ppoll=10, flash=400 peer_dist, keyid=0,
+ttl=0, offset=-29.750, delay=0.316, dispersion=30.400, jitter=1.136,
+reftime=d1e4505b.d456f5b0  Thu, Aug  4 2011  0:55:23.829,
+org=d1e4c793.e477ba4b  Thu, Aug  4 2011  9:24:03.892,
+rec=d1e4c793.ec1fc3ac  Thu, Aug  4 2011  9:24:03.922,
+xmt=d1e4c793.ec0b133c  Thu, Aug  4 2011  9:24:03.922,
+filtdelay=     0.32    0.40    0.33    0.45    0.42    0.42    0.33    0.38,
+filtoffset=  -29.75  -30.89  -29.97  -30.11  -30.15  -29.20  -30.25  -30.36,
+filtdisp=     15.63   31.00   46.38   61.75   77.14   92.52  107.91  123.28</pre>
+<p>The flash codes in the rv command output give the reason for the ntp source to get rejected :</p>
+<pre>flash=400 peer_dist</pre>
+<p>This flash code corresponds to "distance threshold exceeded". Check all the flash codes <a href="http://www.eecis.udel.edu/~mills/ntp/html/decode.html#flash" target="_blank">here</a>.</p>
+<p>Also, check the following variables :</p>
+<pre>rootdispersion=1381.516
+dispersion=30.400
+jitter=1.136</pre>
+<p>Dispersion is an estimate of error, and a large value indicates that the ntp server is not a reliable source, and can indicate conditions such as severe packet loss and network congestion.</p>
+<p>Another useful aid is to run ntpdate with the -d switch :</p>
+<pre># ntpdate -d time.rhl.com
+
+17 Oct 00:20:51 ntpdate[26388]: ntpdate 4.2.2p1@1.1570-o Thu Nov 26 11:34:35 UTC 2009 (1)
+Looking for host time.rhl.com and service ntp
+host found : time.rhl.com
+transmit(66.125.13.54)
+receive(66.125.13.54)
+transmit(66.125.13.54)
+receive(66.125.13.54)
+transmit(66.125.13.54)
+receive(66.125.13.54)
+transmit(66.125.13.54)
+receive(66.125.13.54)
+transmit(66.125.13.54)
+server 66.125.13.54, port 123
+stratum 1, precision -16, leap 00, trust 000
+refid [CDMA], delay 0.32297, dispersion 0.00040
+transmitted 4, in filter 4
+reference time:    d245a5fe.2fdfe09b  Mon, Oct 17 2011  0:20:38.187
+originate timestamp: d245a60c.e2117d1e  Mon, Oct 17 2011  0:20:52.883
+transmit timestamp:  d245a60c.b9c9b413  Mon, Oct 17 2011  0:20:52.725
+filter delay:  0.32361  0.32382  0.32297  0.32619
+         0.00000  0.00000  0.00000  0.00000
+filter offset: 0.003892 0.004005 0.003607 0.004972
+         0.000000 0.000000 0.000000 0.000000
+delay 0.32297, dispersion 0.00040
+offset 0.003607
+17 Oct 00:20:53 ntpdate[26388]: adjust time server 66.187.233.4 offset 0.003607 sec</pre>
+<p>Most, if not all ntp issues can be resolved with the information gathered from the above commands.</p>
+<p>Do you have any tips on debugging ntp problems?</p>
+
+</div>
+
+<p class="message">
+If you liked this post, you can
+<a href="https://twitter.com/intent/tweet?url=http://raghusiddarth.com/how-to-debug-ntp-issues&text=How to debug ntp issues?&via=rag_s" target="_blank">
+    share it with your followers</a>
+or
+<a href="https://twitter.com/rag_s">
+    follow me on Twitter</a>!
+</p>
+
+
+<div class="related">
+  <h2>Related Posts</h2>
+  <ul class="related-posts">
+    
+      <li>
+        <h3>
+          <a href="/using-nfsroot-to-boot-diskless-clients-on-rhel">
+            Using nfsroot to boot diskless clients on RHEL
+            <small>20 Mar 2012</small>
+          </a>
+        </h3>
+      </li>
+    
+      <li>
+        <h3>
+          <a href="/list-information-about-block-devices-using-lsblk">
+            List information about block devices using lsblk
+            <small>02 Nov 2011</small>
+          </a>
+        </h3>
+      </li>
+    
+      <li>
+        <h3>
+          <a href="/using-webdav-to-access-box-net-files-on-a-fedora-system">
+            Using WebDAV to access Box.net files on a Fedora system
+            <small>24 Oct 2011</small>
+          </a>
+        </h3>
+      </li>
+    
+  </ul>
+</div>
+
+    </div>
+
+  </body>
+</html>

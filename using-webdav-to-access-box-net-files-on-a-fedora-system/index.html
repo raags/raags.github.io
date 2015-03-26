@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+
+  <head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>
+    
+      Using WebDAV to access Box.net files on a Fedora system &middot; Raghu Udiyar
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/public/css/poole.css">
+  <link rel="stylesheet" href="/public/css/syntax.css">
+  <link rel="stylesheet" href="/public/css/hyde.css">
+  <!--<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=PT+Sans:400,400italic,700|Abril+Fatface">-->
+  <link href='http://fonts.googleapis.com/css?family=Poiret+One' rel='stylesheet' type='text/css'>
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/public/apple-touch-icon-144-precomposed.png">
+  <link rel="shortcut icon" href="/public/favicon.ico">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/atom.xml">
+</head>
+
+
+  <body class="layout-reverse">
+
+    <div class="sidebar">
+  <div class="container sidebar-sticky">
+    <div class="sidebar-img">
+      <img src="//www.gravatar.com/avatar/8868c777e28f843dc1cb3093baeff5eb?s=400" />
+      </div>
+    <div class="sidebar-about">
+      <h1>
+        <a href="/">
+          Raghu Udiyar
+        </a>
+      </h1>
+      <p class="lead"></p>
+    </div>
+    <div class="sidebar-social">
+      <a href=https://twitter.com/rag_s><img src=/public/twitter.png></a>
+      <a href=https://github.com/raags><img src=/public/github.png></a>
+      <a href=/atom.xml><img src=/public/rss.png></a>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a class="sidebar-nav-item" href="/">Home</a>
+
+      
+
+      
+      
+        
+          
+        
+      
+        
+          
+            <a class="sidebar-nav-item" href="/about/">About</a>
+          
+        
+      
+        
+          
+            <a class="sidebar-nav-item" href="/archive/">Archive</a>
+          
+        
+      
+        
+      
+        
+          
+        
+      
+
+      <!--<a class="sidebar-nav-item" href="">GitHub project</a>-->
+      <!--<span class="sidebar-nav-item">Currently v</span>         -->
+    </nav>
+
+    <div class="sidebar-footer">
+      <p><small>Theme based on <a href=http://hyde.getpoole.com/>hyde</a><br/><small>&copy; 2015. All rights reserved.</small></p>
+    </div>
+  </div>
+</div>
+
+
+    <div class="content container">
+      <div class="post">
+  <h1 class="post-title">Using WebDAV to access Box.net files on a Fedora system</h1>
+  <span class="post-date">24 Oct 2011</span>
+  <p><a title="Dropbox" href="http://www.dropbox.com" target="_blank">Dropbox</a> is by far the leader in the consumer "cloud storage" space; It is simple to use, feature rich and just works! But, there is only so much you can do with the provided 2 Gb free storage.</p>
+<p>Enter: <a title="Box.net" href="http://www.box.net" target="_blank">Box.net</a>  -- which has offered (for a limited period) 50 Gb free, lifetime storage, for all Ipone and Ipad users. Check <a title="box.net free 50G storage" href="http://blog.box.net/2011/10/12/were-giving-ios-users-insane-amounts-of-free-storage-box50gb/" target="_blank">here</a> for the details.</p>
+<p>However, I soon found out that Box.net does not provide syncing features that Dropbox is so good at, and there are no clients for Linux.</p>
+<p>Lucky, for Linux users, a <a title="WebDAV" href="http://en.wikipedia.org/wiki/WebDAV" target="_blank">WebDAV</a> interface exists.</p>
+<!--more-->
+<p>I used fedora 15, but the instructions are generic enough that they should work on any release or any Linux distribution for that matter.</p>
+<p>1. Create a folder to mount the box.net share :</p>
+<pre>$ mkdir ~/box</pre>
+<p>2. Install davfs2 :</p>
+<pre>$ sudo yum install davfs2</pre>
+<h6>Note : Nautilus does support webdav, but I've found it to be buggy.</h6>
+<p>3. Run the following to add your user to the davfs2 group :</p>
+<pre>$ sudo /sbin/usermod -a -G davfs2 "username"</pre>
+<p>4. Disable locking, as this causes problems with box.net :</p>
+<pre>$ mkdir ~/.davfs2
+$ vi ~/.davfs2/davfs2.conf</pre>
+<p>and add the following :</p>
+<pre>use_locks 0</pre>
+<p>5. (Optional) If you do not want to be prompted for the box.net username/password :</p>
+<pre>$ vi ~/.davfs2/secrets</pre>
+<p>and add the following :</p>
+<pre>http://www.box.net/dav  user@email.com   password</pre>
+<p>6. Add the following entry to /etc/fstab :</p>
+<pre>$ sudo vi /etc/fstab
+
+http://www.box.net/dav /home/"username"/box  davfs rw,user,noauto 0 0</pre>
+<h6>Note: Don't forget to replace "username" with your actual username.</h6>
+<p>7. Finally, to mount the folder run :</p>
+<pre>$ mount  ~/box</pre>
+<p>and the files from your box.net account should be visible.</p>
+<p>Use "rsync", "unison", or just plain "cp" to sync files directly to box.net. I find this very convenient for backups and file sharing.</p>
+
+</div>
+
+<p class="message">
+If you liked this post, you can
+<a href="https://twitter.com/intent/tweet?url=http://raghusiddarth.com/using-webdav-to-access-box-net-files-on-a-fedora-system&text=Using WebDAV to access Box.net files on a Fedora system&via=rag_s" target="_blank">
+    share it with your followers</a>
+or
+<a href="https://twitter.com/rag_s">
+    follow me on Twitter</a>!
+</p>
+
+
+<div class="related">
+  <h2>Related Posts</h2>
+  <ul class="related-posts">
+    
+      <li>
+        <h3>
+          <a href="/using-nfsroot-to-boot-diskless-clients-on-rhel">
+            Using nfsroot to boot diskless clients on RHEL
+            <small>20 Mar 2012</small>
+          </a>
+        </h3>
+      </li>
+    
+      <li>
+        <h3>
+          <a href="/list-information-about-block-devices-using-lsblk">
+            List information about block devices using lsblk
+            <small>02 Nov 2011</small>
+          </a>
+        </h3>
+      </li>
+    
+      <li>
+        <h3>
+          <a href="/how-to-debug-ntp-issues">
+            How to debug ntp issues?
+            <small>17 Oct 2011</small>
+          </a>
+        </h3>
+      </li>
+    
+  </ul>
+</div>
+
+    </div>
+
+  </body>
+</html>

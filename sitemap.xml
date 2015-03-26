@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>http://raghusiddarth.com/using-nfsroot-to-boot-diskless-clients-on-rhel</loc>
+    <lastmod>2012-03-20T16:22:09+05:30</lastmod>
+  </url>
+  <url>
+    <loc>http://raghusiddarth.com/list-information-about-block-devices-using-lsblk</loc>
+    <lastmod>2011-11-02T23:46:58+05:30</lastmod>
+  </url>
+  <url>
+    <loc>http://raghusiddarth.com/using-webdav-to-access-box-net-files-on-a-fedora-system</loc>
+    <lastmod>2011-10-24T23:46:46+05:30</lastmod>
+  </url>
+  <url>
+    <loc>http://raghusiddarth.com/how-to-debug-ntp-issues</loc>
+    <lastmod>2011-10-17T02:06:05+05:30</lastmod>
+  </url>
+  <url>
+    <loc>http://raghusiddarth.com/an-introduction-to-shorewall-firewall</loc>
+    <lastmod>2010-10-25T16:41:13+05:30</lastmod>
+  </url>
+  <url>
+    <loc>http://raghusiddarth.com/404.html</loc>
+  </url>
+  <url>
+    <loc>http://raghusiddarth.com/about/</loc>
+  </url>
+  <url>
+    <loc>http://raghusiddarth.com/archive/</loc>
+  </url>
+  <url>
+    <loc>http://raghusiddarth.com/</loc>
+  </url>
+</urlset>
