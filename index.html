@@ -11,7 +11,7 @@
 
   <title>
     
-      Raghu Udiyar &middot; Raghu's personal Blog
+      Raghu Udiyar &middot; Raghu's personal blog
     
   </title>
 
@@ -32,6 +32,17 @@
 
 
   <body class="layout-reverse">
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-61742848-1', 'auto');
+    ga('send', 'pageview');
+
+</script>
+
 
     <div class="sidebar">
   <div class="container sidebar-sticky">
@@ -81,6 +92,10 @@
           
         
       
+        
+          
+        
+      
 
       <!--<a class="sidebar-nav-item" href="">GitHub project</a>-->
       <!--<span class="sidebar-nav-item">Currently v</span>         -->
@@ -98,7 +113,79 @@
   
   <div class="post">
     <h1 class="post-title">
-      <a href="/using-nfsroot-to-boot-diskless-clients-on-rhel">
+      <a href="/blog/migrating-gerrit-from-google-openid-to-outh">
+        Migrating Gerrit from Google OpenID to Oauth
+      </a>
+    </h1>
+
+    <span class="post-date">10 Apr 2015</span>
+
+    <p>Google is phasing out <a href="https://developers.google.com/+/api/auth-migration">OpenID in favour of Oauth 2.0</a> with a deadline on 20th April, 2015 - just 10 days from today. A lot of projects depend on google auth, and can&#39;t easily move to another OpenID provider. I recently had to fix this issue with Jenkins and Gerrit.</p>
+
+<p>Jenkins has a great <a href="https://wiki.jenkins-ci.org/display/JENKINS/Google+Login+Plugin">plugin</a> available for this, which was a piece of cake to install and configure. But it wasn&#39;t so easy with Gerrit. Lot of gerrit users have been asking for <a href="https://code.google.com/p/gerrit/issues/detail?id=2677">Oauth support</a> since May last year; we got that finally when <a href="https://github.com/davido">David Ostrovsky</a> wrote <a href="https://github.com/davido/gerrit-oauth-provider">gerrit-oauth-provider</a> plugin.</p>
+
+<p>I&#39;ve listed the steps I followed below :</p>
+
+<ol>
+<li><p>Oauth2 credentials</p>
+
+<p>Get these from <a href="https://console.developers.google.com">Google Developers Console</a>, note down the <code>client id</code> and <code>client secret</code>. Ensure the redirect url is set to <code>/oauth</code> i.e. <code>http://gerrit.yoursite.com/oauth</code>.</p></li>
+<li><p>Get the custom gerrit war file</p>
+
+<p>There are a few gerrit <a href="https://gerrit-review.googlesource.com/#/q/project:gerrit+branch:stable-2.10+topic:oauth-authentication-provider">changes</a> the plugin needs that haven&#39;t been merged yet. A custom war is available <a href="https://github.com/davido/gerrit-oauth-provider/releases/tag/v0.1">here</a> with the plugin. Download this <code>gerrit-2.10.1-4-a83387b.war</code> file to the new gerrit server.</p></li>
+<li><p>Backup current gerrit data</p>
+
+<p>Create tarballs and dump postgres data (if postgres is being used)</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">old-gerrit~$ tar czpf gerrit.tar.gz /srv/gerrit/gerrit
+old-gerrit~$ tar czpf repositories.tar.gz /srv/gerrit/repositories
+old-gerrit~$ pg_dump -xO -Fc reviewdb &gt; reviewdb-$(date +%d-%m-%Y).pdump
+</code></pre></div></li>
+<li><p>Restore data to new gerrit server</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">gerrit:/srv/gerrit$ tar xzpf repositories.tar.gz
+gerrit:/srv/gerrit$ tar xzpf gerrit.tar.gz
+</code></pre></div></li>
+<li><p>Restore pg data</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">psql : ALTER USER gerrit WITH SUPERUSER;
+$ dropdb reviewdb
+$ createdb reviewdb -O gerrit
+$ pg_restore -O -d reviewdb --role=gerrit reviewdb-20-03-2015.pdump
+psql: ALTER USER gerrit WITH NOSUPERUSER;
+</code></pre></div></li>
+<li><p>Run migrations</p>
+
+<p>Gerrit requires cascading migrations to be run for every major version released. For e.g to update from 2.5 to 2.10, we have to run the following</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ sudo su - gerrit -s /bin/bash
+$ java -jar gerrit-2.8.6.1.war init -d gerrit
+$ java -jar gerrit-2.9.4.war init -d gerrit
+$ java -jar gerrit-2.9.4.war reindex --recheck-mergeable -d gerrit
+</code></pre></div>
+<p>For the custom jar migration be sure to configure the Oauth plugin</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ java -jar gerrit-2.10.1-4-a83387b.war init -d gerrit
+[...]
+OAuth Authentication Provider
+
+Use Google OAuth provider for Gerrit login ? [Y/n]?
+Application client id          : &lt;client-id&gt;
+Application client secret      : &lt;client-secret&gt;
+            confirm password   :
+Link to OpenID accounts? [true]:
+Use GitHub OAuth provider for Gerrit login ? [Y/n]? n
+
+$ java -jar gerrit-2.10.1-4-a83387b.war reindex -d gerrit
+</code></pre></div></li>
+<li><p>Switch old gerrit domain name to the new server</p>
+
+<p>For automatic acount linking to work, the domain name must match the old server. Otherwise the OpenID accounts will not be linked with the new Oauth2 account.</p></li>
+<li><p>Start gerrit server and confirm everything works</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">/bin/gerrit.sh start
+</code></pre></div></li>
+</ol>
+
+  </div>
+  
+  <div class="post">
+    <h1 class="post-title">
+      <a href="/blog/using-nfsroot-to-boot-diskless-clients-on-rhel">
         Using nfsroot to boot diskless clients on RHEL
       </a>
     </h1>
@@ -231,7 +318,7 @@ DHCPDARGS="eth1"</pre>
   
   <div class="post">
     <h1 class="post-title">
-      <a href="/list-information-about-block-devices-using-lsblk">
+      <a href="/blog/list-information-about-block-devices-using-lsblk">
         List information about block devices using lsblk
       </a>
     </h1>
@@ -261,7 +348,7 @@ util-linux-2.19.1-1.4.fc15.x86_64</pre>
   
   <div class="post">
     <h1 class="post-title">
-      <a href="/using-webdav-to-access-box-net-files-on-a-fedora-system">
+      <a href="/blog/using-webdav-to-access-box-net-files-on-a-fedora-system">
         Using WebDAV to access Box.net files on a Fedora system
       </a>
     </h1>
@@ -304,7 +391,7 @@ http://www.box.net/dav /home/"username"/box  davfs rw,user,noauto 0 0</pre>
   
   <div class="post">
     <h1 class="post-title">
-      <a href="/how-to-debug-ntp-issues">
+      <a href="/blog/how-to-debug-ntp-issues">
         How to debug ntp issues?
       </a>
     </h1>
@@ -397,510 +484,36 @@ offset 0.003607
 
   </div>
   
-  <div class="post">
-    <h1 class="post-title">
-      <a href="/an-introduction-to-shorewall-firewall">
-        An Introduction to Shorewall Firewall
-      </a>
-    </h1>
-
-    <span class="post-date">25 Oct 2010</span>
-
-    <p><a href="http://rags.files.wordpress.com/2010/10/gareth-davies-logo3.png"><img class="size-medium wp-image-26 alignnone" title="Shorewall-logo" src="/assets/gareth-davies-logo3.png?w=300" alt="Shorewall-logo" width="300" height="62" /></a></p>
-<p>Shorewall is a very powerful, high level configuration tool for the Linux firewall subsystem. The Linux kernel has an inbuilt framework to manipulate network packets called Netfilter. A front end tool "Iptables" is used to configure this netfilter subsystem. Iptables is sufficient for simple configurations and personal firewalls. However, for complex configuration scenarios you can easily get lost and bogged down with its syntax and myriad options.</p>
-<!--more-->
-<p>Shorewall provides a high level abstraction and keeps the underlying complexity hidden. This makes firewall configurations easier to design and manage. Think of it as, Shorewall is to Iptables, what C is to assembly language. Also, keep in mind that Shorewall is not a daemon that runs in the background. It simply generates the rules, applies them and gets out-of-the-way.</p>
-<p>To start with, I will cover a simple two interface firewall example configuration using Shorewall. We can move to more complex configurations in future posts.</p>
-<p>In this scenario we have a server with one ADSL PPPOE connection - ppp0 and a local network on eth0. I have chosen this setup to hopefully explain the core concepts behind shorewall and set a stage for later enhancements.</p>
-<p><strong>1.</strong> First, install shorewall</p>
-<pre>
-# apt-get install shorewall
-</pre>
-<p><strong>2. </strong>Shorewall configuration lives in <em>/etc/shorewall</em> folder which only has two files by default :</p>
-<pre>
-root@cronos:etc/shorewall# ls
-Makefile shorewall.conf
-</pre>
-<p><strong>3</strong>. In order to configure a simple firewall we should, at least, set up the following files:</p>
-<ul>
-<li>/etc/shorewall/zones</li>
-<li>/etc/shorewall/interfaces</li>
-<li>/etc/shorewall/policy</li>
-<li>/etc/shorewall/rules</li>
-</ul>
-<p><strong>4. </strong> Configuration file skeletons are stored in <em>/usr/share/doc/shorewall-common/default-config</em>, however we will be using the files form the two-interfaces example.</p>
-<p><strong>5. </strong>Except for "shorewall.conf" copy all files from<em> /usr/share/doc/shorewall-common/examples/two-interfaces</em> to<em> /etc/shorewall</em> directory :</p>
-<pre>
-root@cronos:/usr/share/doc/shorewall-common/examples/two-interfaces# ls
-interfaces  masq  policy  README.txt  routestopped  rules  shorewall.conf  zones
-root@cronos:/etc/shorewall# sudo cp /usr/share/doc/shorewall-common/default-config/zones zones
-root@cronos:/etc/shorewall# ls
-interfaces      Makefile      masq      policy    routestopped     rules    shorewall.conf     zones
-</pre>
-<p><strong>6.</strong> Shorewall.conf</p>
-<p>This is the main Shorewall configuration file. Most of the defaults should be fine, expect :</p>
-<ul>
-<li>To enable IP forwarding you have to set the IP_FORWARDING variable "on"</li>
-<li>To disable IPv6 set DISABLE_IPV6 to "yes"</li>
-<li>Since our external interface is ppp0 we will want to set CLAMPMSS=yes. This sets the MSS to 1452 which is recommended on pppoe connections.</li>
-</ul>
-<p><strong>7.</strong> Zones</p>
-<p>The network zones are defined by this file. Zones are an abstraction that help identify different areas of a network. This is a similar to the zones concept used in hardware based firewalls.</p>
-<ul>
-<li>The $FW variable refers to Shorewall itself, which may be used to refer to the firewall zone throughout the Shorewall configuration.</li>
-<li>Define a new zone called "modem" which will contain only our ADSL modem.</li>
-</ul>
-<pre>
-root@cronos:/etc/shorewall# cat zones
-###########################################################
-#ZONE   TYPE    OPTIONS           IN              OUT
-#                                 OPTIONS         OPTIONS
-fw              firewall
-net             ipv4
-loc             ipv4
-modem           ipv4
-#LAST LINE - ADD YOUR ENTRIES ABOVE THIS ONE - DO NOT REMOVE
-</pre>
-<p><strong>8.</strong> Interfaces</p>
-<p>This file is used to define the interfaces on the firewall and the zones they belong to.</p>
-<pre>
-root@cronos:/etc/shorewall# cat interfaces
-###########################################################################
-#ZONE   INTERFACE       BROADCAST             OPTIONS
-net      ppp0              -      tcpflags,routefilter,nosmurfs,logmartians
-modem    eth1            detect
-loc      eth0            detect          tcpflags,nosmurfs
-#LAST LINE -- ADD YOUR ENTRIES BEFORE THIS ONE -- DO NOT REMOVE
-</pre>
-<p><strong>9. </strong>Masq</p>
-<p>This file is used for masquerading and snat configuration. Masquerading or <em>natting </em>is used to allow a number of systems in a local network to get access to the internet over a single public IP.</p>
-<p>Change the first column to the name of our external interface and the second column to the name of our internal interface.</p>
-<pre>
-root@cronos:/etc/shorewall# cat masq
-########################################################################
-#INTERFACE   SOURCE     ADDRESS    PROTO      PORT(S) IPSEC   MARK
-ppp0          eth0
-#LAST LINE -- ADD YOUR ENTRIES ABOVE THIS LINE -- DO NOT REMOVE
-</pre>
-<p>&nbsp;</p>
-<p>With the above files we have described our simple network layout from the perspective of the firewall. Next, we have to define the firewall policy and rules.</p>
-<p><strong>10.</strong> Policy</p>
-<p>The Policy file is used to define our <strong>default</strong> policy for connections from one zone to another zone. This describes which zones are allowed to establish connections with other zones. Later, we define exceptions to these default policies in the rules file to allow/deny desired traffic.</p>
-<pre>
-root@cronos:/etc/shorewall# cat policy
-######################################################################
-#SOURCE        DEST        POLICY     LOG LEVEL       LIMIT:BURST
-# Policies for traffic originating from the local LAN (loc)
-#
-# If you want to force clients to access the Internet via a proxy server
-# on your firewall, change the loc to net policy to REJECT info.
-loc                        net                  ACCEPT
-loc                       $FW                   REJECT                info
-loc                        all                  REJECT                info</p>
-<p>#
-# Policies for traffic originating from the firewall ($FW)
-#
-# If you want open access to the Internet from your firewall, change the
-# $FW to net policy to ACCEPT and remove the 'info' LOG LEVEL.
-# This may be useful if you run a proxy server on the firewall.</p>
-<p>$FW                     net           ACCEPT
-$FW                     loc           REJECT              info
-$FW                     all           REJECT              info</p>
-<p>#
-# Policies for traffic originating from the Internet zone (net)
-#
-net                     $FW                     DROP      info
-net                     loc                     DROP      info
-net                     all                     DROP      info</p>
-<p># THE FOLLOWING POLICY MUST BE LAST
-all             all             REJECT          info</p>
-<p>#LAST LINE -- ADD YOUR ENTRIES ABOVE THIS LINE -- DO NOT REMOVE
-</pre>
-<p><strong>11</strong>. Rules</p>
-<p>This file defines exceptions to the default policies established in the policy file. This is where you will be adding firewall rules to allow or deny traffic to the services running in your network - Usually accomplished thorough dnat or port forwarding rules.</p>
-<pre>
-root@cronos:/etc/shorewall# cat rules
-################################################################################################
-#ACTION    SOURCE    DEST    PROTO   DEST SOURCE      ORIGINAL    RATE            USER/   MARK
-#                                    PORT PORT(S)     DEST        LIMIT           GROUP
-#
-#       Accept DNS connections from the firewall to the network
-#
-DNS/ACCEPT    $FW             net
-#
-#       Accept SSH connections from the local network for administration
-#
-SSH/ACCEPT      loc             $FW
-#
-#       Allow Ping from the local network
-#
-Ping/ACCEPT     loc             $FW</p>
-<p>#
-# Reject Ping from the &quot;bad&quot; net zone.. and prevent your log from being flooded..
-#</p>
-<p>Ping/REJECT     net             $FW</p>
-<p>ACCEPT          $FW             loc     icmp
-ACCEPT          $FW             net     icmp
-#</p>
-<p>########################################################
-# Custom Lines</p>
-<p>#ACTION         SOURCE    DEST               PROTO     DEST PORT(S)
-# &lt;macro&gt;/ACCEPT  $FW       &lt;destination zone&gt;
-# ACCEPT          $FW       &lt;destination zone&gt; &lt;protocol&gt; &lt;port&gt;</p>
-<p>## From Local Network ##
-Web/ACCEPT      loc       $FW</p>
-<p>VNC/ACCEPT      loc       $FW</p>
-<p>## From Internet ##
-# Port Forwarding</p>
-<p># DNAT          net       loc:[:]
-# Web/DNAT      net       loc:10.10.10.2
-# FTP/DNAT      net       loc:10.10.10.1</p>
-<p>SSH/ACCEPT      net       $FW</p>
-<p>#LAST LINE -- ADD YOUR ENTRIES BEFORE THIS ONE -- DO NOT REMOVE
-</pre>
-<p><strong>12. </strong>Starting shorewall</p>
-<p>Automatic startup is disabled by default. To enable it just edit the file <em>/etc/default/shorewall</em> and set the startup variable to 1. Also, set wait_interface="ppp0"</p>
-<pre>
-root@cronos:/etc/shorewall# cat /etc/default/shorewall
-# prevent startup with default configuration
-# set the following varible to 1 in order to allow Shorewall to start
-startup=1
-wait_interface=&quot;ppp0&quot;&quot;
-</pre>
-<p>The firewall is started using the <em>shorewall start</em> command and stopped using <em>shorewall stop</em>.</p>
-<pre>
-root@cronos:/# sudo shorewall start
-Compiling...
-Initializing...
-Determining Zones...
- IPv4 Zones: net loc modem
- Firewall Zone: fw
-Validating interfaces file...
-...
-Creating action chain dropInvalid
-Creating action chain dropNotSyn
-Applying Policies...
-Setting up Masquerading/SNAT...
-Activating Rules...
-done.
-</pre>
-<p>The shorewall stop command does not remove all netfilter rules and open the firewall for all traffic to pass. It rather places the firewall in a  safe state defined by the contents of<em> /etc/shorewall/routestopped</em> file. Use the <em>shorewall clear</em> command to remove all netfilter rules.</p>
-<p>Note: For pppoe connections, when the PPP interface for the ADSL link goes down, Shorewall needs to be restarted to take the new IP address assignments into account. We will need to restart the firewall by placing /sbin/shorewall restart in the /etc/ppp/ip-up.d directory.</p>
-<pre>
-root@cronos:/etc/ppp/ip-up.d# cat shorewall
-#!/bin/sh
-/sbin/shorewall -f restart
-exit 0
-</pre>
-<p>This concludes the short introduction to Shorewall. A lot has been introduced above and I haven't gone thorough the details of each configuration file since most of it is quite self-explanatory. Hopefully, that is enough to get started on Shorewall.</p>
-<p>To truly admire Shorewall's versatility however, we need to explore more complex setups such as multi-isp, load-balancing , active failover , traffic shaping etc. I hope to bring these topics in future posts.</p>
-<div id="_mcePaste" class="mcePaste" style="position:absolute;left:-10000px;top:83px;width:1px;height:1px;overflow:hidden;">4. Configuration file skeletons are stored here, however we will be using the files form the two-interfaces example.#:/usr/share/doc/shorewall-common/default-config$ ls
-accounting  continue  init        ipsec     masq     netmap  providers    routestopped  started  tcclasses  tos      zones
-actions     ecn       initdone    ipsecvpn  modules  params  proxyarp     rules         stop     tcdevices  tunnel
-blacklist   hosts     interfaces  maclist   nat      policy  route_rules  start         stopped  tcrules    tunnels5. Except for "shorewall.conf" copy all files from /usr/share/doc/shorewall-common/examples/two-interfaces to /etc/shorewall directory</p>
-<p>#:/usr/share/doc/shorewall-common/examples/two-interfaces$ ls
-interfaces  masq  policy  README.txt  routestopped  rules  shorewall.conf  zones</p>
-<p>#:/etc/shorewall$ sudo cp /usr/share/doc/shorewall-common/default-config/zones zones
-#:/etc/shorewall$ ls
-interfaces  Makefile  masq  policy  routestopped  rules  shorewall.conf  zones</p>
-<p>6. shorewall.conf</p>
-<p>* IP forwarding is neither enabled nor disabled. It is set to "keep". To enable IP forwarding you have to set to "on" the IP_FORWARDING variable.</p>
-<p>* IPv6 support is enabled by default. To disable it set DISABLE_IPV6 to "yes".</p>
-<p>* Since our external interface is ppp0 we will want to set CLAMPMSS=yes.</p>
-<p>7. zones</p>
-<p>* This file is used to define the network zones</p>
-<p>* Shorewall recognizes the firewall system as its own zone. The name of the firewall zone is stored in the shell variable $FW which may be used to refer to the firewall zone throughout the Shorewall configuration.</p>
-<p>* Define a new zone called "modem" which will contain only our ADSL modem.</p>
-<p>#:/etc/shorewall$ cat zones</p>
-<p>###############################################################################
-#ZONE   TYPE    OPTIONS              IN              OUT
-#                                    OPTIONS            OPTIONS
-fw      firewall
-net     ipv4
-loc     ipv4
-modem   ipv4</p>
-<p>#LAST LINE - ADD YOUR ENTRIES ABOVE THIS ONE - DO NOT REMOVE</p>
-<p>8. interfaces</p>
-<p>* This file is used to tell the firewall which of your firewall's network interfaces are connected to which zone.</p>
-<p>#:/etc/shorewall$ cat interfaces</p>
-<p>###############################################################################
-#ZONE   INTERFACE       BROADCAST    OPTIONS
-net     ppp0               -            tcpflags,routefilter,nosmurfs,logmartians
-modem   eth1            detect
-loc     eth0            detect          tcpflags,nosmurfs
-#LAST LINE -- ADD YOUR ENTRIES BEFORE THIS ONE -- DO NOT REMOVE</p>
-<p>9. masq</p>
-<p>* Masquerade describes the case where you let your firewall system automatically detect the external interface address.</p>
-<p>* SNAT refers to the case when you explicitly specify the source address that you want outbound packets from your local network to use.</p>
-<p>* In Shorewall, both Masquerading and SNAT are configured with entries in the /etc/shorewall/masq file. You will normally use Masquerading if your external IP is dynamic and SNAT if the IP is static.</p>
-<p>* Edit /etc/shorewall/masq and change the first column to the name of your external interface and the second column to the name of your internal interface.</p>
-<p>#:/etc/shorewall$ cat masq</p>
-<p>###############################################################################
-#INTERFACE              SOURCE       ADDRESS         PROTO      PORT(S) IPSEC   MARK
-ppp0                    eth0
-#LAST LINE -- ADD YOUR ENTRIES ABOVE THIS LINE -- DO NOT REMOVE</p>
-<p>* policy</p>
-<p>* Rules about what traffic to allow and what traffic to deny are expressed in terms of zones.</p>
-<p>* We express our default policy for connections from one zone to another zone in the /etc/shorewall/policy file.</p>
-<p>* We define exceptions to those default policies in the /etc/shorewall/rules file.</p>
-<p>* This file is used to describe the firewall policy regarding establishment of connections. Connection establishment is described in terms of clients who initiate connections and servers who receive those connection requests.</p>
-<p>* Policies defined in /etc/shorewall/policy describe which zones are allowed to establish connections with other zones.</p>
-<p>#:/etc/shorewall$ cat policy</p>
-<p>###############################################################################
-#SOURCE         DEST            POLICY          LOG LEVEL       LIMIT:BURST</p>
-<p>#
-# Note about policies and logging:
-#       This file contains an explicit policy for every combination of
-#       zones defined in this sample.  This is solely for the purpose of
-#       providing more specific messages in the logs.  This is not
-#       necessary for correct operation of the firewall, but greatly
-#       assists in diagnosing problems. The policies below are logically
-#       equivalent to:
-#
-#       loc     net             ACCEPT
-#       net     all             DROP    info
-#       all     all             REJECT          info
-#
-#       The Shorewall-perl compiler will generate the individual policies
-#       below from the above general policies if you set
-#       EXPAND_POLICIES=Yes in shorewall.conf.
-#</p>
-<p># Policies for traffic originating from the local LAN (loc)
-#
-# If you want to force clients to access the Internet via a proxy server
-# on your firewall, change the loc to net policy to REJECT info.
-loc             net             ACCEPT
-loc             $FW             REJECT          info
-loc             all             REJECT          info</p>
-<p>#
-# Policies for traffic originating from the firewall ($FW)
-#
-# If you want open access to the Internet from your firewall, change the
-# $FW to net policy to ACCEPT and remove the 'info' LOG LEVEL.
-# This may be useful if you run a proxy server on the firewall.</p>
-<p># $FW           net             REJECT          info</p>
-<p>$FW             net             ACCEPT
-$FW             loc             REJECT          info
-$FW             all             REJECT          info</p>
-<p>#
-# Policies for traffic originating from the Internet zone (net)
-#
-net             $FW             DROP    info
-net             loc             DROP    info
-net             all             DROP    info</p>
-<p># THE FOLLOWING POLICY MUST BE LAST
-all             all             REJECT          info</p>
-<p>#LAST LINE -- ADD YOUR ENTRIES ABOVE THIS LINE -- DO NOT REMOVE</p>
-<p>9. rules</p>
-<p>* The /etc/shorewall/rules file defines exceptions to the policies established in the /etc/shorewall/policy file.</p>
-<p>* There is one entry in /etc/shorewall/rules for each of these rules. Entries in this file only govern the establishment of new connections — packets that are part of an existing connection or that establish a connection that is related to an existing connection are automatically accepted.</p>
-<p>* Rules : http://www.shorewall.net/3.0/Documentation.htm#Rules</p>
-<p>#:/etc/shorewall$ cat rules</p>
-<p>#############################################################################################################
-#ACTION         SOURCE          DEST    PROTO   DEST SOURCE             ORIGINAL        RATE            USER/   MARK
-#                                               PORT PORT(S)            DEST            LIMIT           GROUP
-#
-#       Accept DNS connections from the firewall to the network
-#</p>
-<p># DNS/ACCEPT    $FW             net
-#
-#       Accept SSH connections from the local network for administration
-#
-SSH/ACCEPT      loc             $FW
-#
-#       Allow Ping from the local network
-#
-Ping/ACCEPT     loc             $FW</p>
-<p>#
-# Reject Ping from the "bad" net zone.. and prevent your log from being flooded..
-#</p>
-<p>Ping/REJECT     net             $FW</p>
-<p>ACCEPT          $FW             loc     icmp
-ACCEPT          $FW             net     icmp
-#</p>
-<p>########################################################
-# Custom Lines</p>
-<p>#ACTION         SOURCE    DEST               PROTO     DEST PORT(S)
-# &lt;macro&gt;/ACCEPT  $FW       &lt;destination zone&gt;
-# ACCEPT          $FW       &lt;destination zone&gt; &lt;protocol&gt; &lt;port&gt;</p>
-<p>## From Local Network ##
-# Accept DNS requests from local nw</p>
-<p>DNS/ACCEPT      loc       $FW</p>
-<p>Web/ACCEPT      loc       $FW</p>
-<p>VNC/ACCEPT      loc       $FW</p>
-<p>## From Internet ##
-# Port Forwarding</p>
-<p># DNAT          net       loc:[:]
-# Web/DNAT      net       loc:10.10.10.2
-# FTP/DNAT      net       loc:10.10.10.1
-SSH/ACCEPT      net       $FW</p>
-<p>#LAST LINE -- ADD YOUR ENTRIES BEFORE THIS ONE -- DO NOT REMOVE</p>
-<p>10. Port Forwarding (DNAT)</p>
-<p>* Port forwarding configuration is done using DNAT rules in the /etc/shorewall/rules file.</p>
-<p>The general form of a simple port forwarding rule in /etc/shorewall/rules is:</p>
-<p>#ACTION   SOURCE    DEST                                          PROTO      DEST PORT(S)
-DNAT      net       loc:[:]</p>
-<p>* Shorewall has macros for many popular applications. Look at /usr/share/shorewall/macro.* to see what is available.</p>
-<p>* Macros simplify creating DNAT rules by supplying the protocol and port(s) as shown in the following examples.</p>
-<p>#:/usr/share/shorewall$ ls
-action.Drop       macro.BitTorrent  macro.HTTPS         macro.Jetdirect  macro.PostgreSQL  macro.SPAMD       macro.Web
-action.Reject     macro.CVS         macro.ICQ           macro.L2TP       macro.Printer     macro.SSH         macro.Webmin
-actions.std       macro.Distcc      macro.IMAP          macro.LDAP       macro.Rdate       macro.Submission  macro.Whois
-action.template   macro.DNS         macro.IMAPS         macro.LDAPS      macro.RDP         macro.SVN         Makefile-lite
-configpath        macro.Drop        macro.IPIP          macro.MySQL      macro.Reject      macro.Syslog      modules
-firewall          macro.DropDNSrep  macro.IPP           macro.NNTP       macro.Rsync       macro.Telnet      rfc1918
-lib.base          macro.DropUPnP    macro.IPPserver     macro.NNTPS      macro.SixXS       macro.Telnets     strip
-lib.cli           macro.Edonkey     macro.IPsec         macro.NTP        macro.SMB         macro.template    version
-lib.config        macro.Finger      macro.IPsecah       macro.NTPbrd     macro.SMBBI       macro.TFTP        wait4ifup
-lib.dynamiczones  macro.FTP         macro.IPsecnat      macro.PCA        macro.SMBswat     macro.Time
-macro.AllowICMPs  macro.Gnutella    macro.Jabberd       macro.Ping       macro.SMTP        macro.Trcrt
-macro.Amanda      macro.GRE         macro.JabberPlain   macro.POP3       macro.SMTPS       macro.VNC
-macro.Auth        macro.HTTP        macro.JabberSecure  macro.POP3S      macro.SNMP        macro.VNCL</p>
-<p>* Example :</p>
-<p>#ACTION         SOURCE    DEST             PROTO     DEST PORT(S)
-Web/DNAT        net       loc:10.10.10.2</p>
-<p>VNC/ACCEPT      loc       $FW</p>
-<p>* Starting shorewall</p>
-<p>* In order to avoid the startup of the firewall on an unconfigured machine, automatic startup, on boot, is disabled by default. To enable it just edit the file /etc/default/shorewall and set the startup variable to 1.</p>
-<p>* Also, set wait_interface="ppp0"</p>
-<p>#:/etc/shorewall$ cat /etc/default/shorewall
-# prevent startup with default configuration
-# set the following varible to 1 in order to allow Shorewall to start</p>
-<p>startup=1</p>
-<p># if your Shorewall configuration requires detection of the ip address of a ppp
-# interface, you must list such interfaces in "wait_interface" to get Shorewall to
-# wait until the interface is configured. Otherwise the script will fail because
-# it won't be able to detect the IP address.
-#
-# Example:
-#    wait_interface="ppp0"
-# or
-#    wait_interface="ppp0 ppp1"
-# or, if you have defined  in /etc/shorewall/params
-#    wait_interface=</p>
-<p>wait_interface="ppp0"</p>
-<p>#
-# Startup options
-#</p>
-<p>OPTIONS=""</p>
-<p># EOF
-#:/etc/shorewall$</p>
-<p>* The firewall is started using the shorewall start command and stopped using shorewall stop.</p>
-<p>#:/$ sudo shorewall start
-Compiling...
-Initializing...
-Determining Zones...
-IPv4 Zones: net loc modem
-Firewall Zone: fw
-Validating interfaces file...
-Validating hosts file...
-Pre-processing Actions...
-Pre-processing /usr/share/shorewall/action.Drop...
-Pre-processing /usr/share/shorewall/action.Reject...
-Validating Policy file...
-Determining Hosts in Zones...
-net Zone: ppp0:0.0.0.0/0
-loc Zone: eth0:0.0.0.0/0
-modem Zone: eth1:0.0.0.0/0
-Deleting user chains...
-Compiling /etc/shorewall/routestopped ...
-Creating Interface Chains...
-Compiling Common Rules
-Adding Anti-smurf Rules
-Compiling TCP Flags checking...
-Compiling Kernel Route Filtering...
-Compiling Martian Logging...
-Compiling IP Forwarding...
-Compiling /etc/shorewall/rules...
-Compiling Actions...
-Compiling /usr/share/shorewall/action.Drop for Chain Drop...
-Compiling /usr/share/shorewall/action.Reject for Chain Reject...
-Compiling /etc/shorewall/policy...
-Compiling Masquerading/SNAT
-Compiling Traffic Control Rules...
-Compiling Rule Activation...
-Shorewall configuration compiled to /var/lib/shorewall/.start
-Starting Shorewall....
-Initializing...
-Clearing Traffic Control/QOS
-Deleting user chains...
-Enabling Loopback and DNS Lookups
-Creating Interface Chains...
-Setting up SMURF control...
-Setting up Black List...
-Adding Anti-smurf Jumps...
-Setting up TCP Flags checking...
-Setting up ARP filtering...
-Setting up Route Filtering...
-Setting up Martian Logging...
-Setting up Accept Source Routing...
-IP Forwarding Enabled
-Setting up SYN Flood Protection...
-Setting up Rules...
-Setting up Actions...
-Creating action chain Drop
-Creating action chain Reject
-Creating action chain dropBcast
-Creating action chain dropInvalid
-Creating action chain dropNotSyn
-Applying Policies...
-Setting up Masquerading/SNAT...
-Activating Rules...
-done.
-#:/$</p>
-<p>* When the firewall is stopped, routing is enabled on those hosts that have an entry in /etc/shorewall/routestopped.</p>
-<p>#:/etc/shorewall$ cat routestopped
-#
-# Shorewall version 4.0 - Sample Routestopped File for two-interface configuration.
-# Copyright (C) 2006 by the Shorewall Team
-#
-# This library is free software; you can redistribute it and/or
-# modify it under the terms of the GNU Lesser General Public
-# License as published by the Free Software Foundation; either
-# version 2.1 of the License, or (at your option) any later version.
-#
-# See the file README.txt for further details.
-#------------------------------------------------------------------------------
-# For information about entries in this file, type "man shorewall-routestopped"
-#
-# The manpage is also online at
-# http://shorewall.net/manpages/shorewall-routestopped.html
-#
-# See
-# http://shorewall.net/starting_and_stopping_shorewall.htm for additional
-# information.
-#
-##############################################################################
-#INTERFACE      HOST(S)                  OPTIONS
-eth0            -
-#LAST LINE -- ADD YOUR ENTRIES BEFORE THIS ONE -- DO NOT REMOVE</p>
-<p>* The shorewall stop command does not remove all netfilter rules and open your firewall for all traffic to pass. It rather places the firewall in a safe state defined by the contents of /etc/shorewall/routestopped file and the setting of ADMINISABSENTMINDED in /etc/shorewall/shorewall.conf</p>
-<p>* If you want to remove all Netfilter rules and open your firewall for all traffic to pass, use the shorewall clear command.</p>
-<p>* If you change your configuration and want to install the changes, use the shorewall restart command.</p>
-<p>[edit] For pppoe</p>
-<p>When the PPP interface for the ADSL link goes down, Shorewall needs to be restarted to take the new IP address assignments into account.</p>
-<p>We will need to restart the firewall by placing /sbin/shorewall restart in the /etc/ppp/ip-up.d directory.</p>
-<p>root@ubuntu:/etc/ppp/ip-up.d# cat shorewall
-#!/bin/sh</p>
-<p>/sbin/shorewall -f restart</p>
-<p>exit 0
-root@ubuntu:/etc/ppp/ip-up.d#</p>
-</div>
-
-  </div>
-  
 </div>
 
 <div class="pagination">
   
-    <span class="pagination-item older">Older</span>
+  <a class="pagination-item older" href="/page2">Older</a>
   
   
     <span class="pagination-item newer">Newer</span>
   
 </div>
 
+      
+<!-- Add Disqus comments. -->
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+  var disqus_shortname = 'raghusiddarth';
+  // var disqus_identifier = "/";
+
+      /* * * DON'T EDIT BELOW THIS LINE * * */
+      (function() {
+          var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+          dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+          (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+
     </div>
+
 
   </body>
 </html>

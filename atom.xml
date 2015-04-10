@@ -4,7 +4,7 @@
  <title>Raghu Udiyar</title>
  <link href="http://raghusiddarth.com/atom.xml" rel="self"/>
  <link href="http://raghusiddarth.com/"/>
- <updated>2015-03-25T10:20:29+05:30</updated>
+ <updated>2015-04-10T13:01:56+05:30</updated>
  <id>http://raghusiddarth.com</id>
  <author>
    <name>Raghu Udiyar</name>
@@ -13,10 +13,78 @@
 
  
  <entry>
+   <title>Migrating Gerrit from Google OpenID to Oauth</title>
+   <link href="http://raghusiddarth.com/blog/migrating-gerrit-from-google-openid-to-outh"/>
+   <updated>2015-04-10T00:00:00+05:30</updated>
+   <id>http://raghusiddarth.com/blog/migrating-gerrit-from-google-openid-to-outh</id>
+   <content type="html">&lt;p&gt;Google is phasing out &lt;a href=&quot;https://developers.google.com/+/api/auth-migration&quot;&gt;OpenID in favour of Oauth 2.0&lt;/a&gt; with a deadline on 20th April, 2015 - just 10 days from today. A lot of projects depend on google auth, and can&amp;#39;t easily move to another OpenID provider. I recently had to fix this issue with Jenkins and Gerrit.&lt;/p&gt;
+
+&lt;p&gt;Jenkins has a great &lt;a href=&quot;https://wiki.jenkins-ci.org/display/JENKINS/Google+Login+Plugin&quot;&gt;plugin&lt;/a&gt; available for this, which was a piece of cake to install and configure. But it wasn&amp;#39;t so easy with Gerrit. Lot of gerrit users have been asking for &lt;a href=&quot;https://code.google.com/p/gerrit/issues/detail?id=2677&quot;&gt;Oauth support&lt;/a&gt; since May last year; we got that finally when &lt;a href=&quot;https://github.com/davido&quot;&gt;David Ostrovsky&lt;/a&gt; wrote &lt;a href=&quot;https://github.com/davido/gerrit-oauth-provider&quot;&gt;gerrit-oauth-provider&lt;/a&gt; plugin.&lt;/p&gt;
+
+&lt;p&gt;I&amp;#39;ve listed the steps I followed below :&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;&lt;p&gt;Oauth2 credentials&lt;/p&gt;
+
+&lt;p&gt;Get these from &lt;a href=&quot;https://console.developers.google.com&quot;&gt;Google Developers Console&lt;/a&gt;, note down the &lt;code&gt;client id&lt;/code&gt; and &lt;code&gt;client secret&lt;/code&gt;. Ensure the redirect url is set to &lt;code&gt;/oauth&lt;/code&gt; i.e. &lt;code&gt;http://gerrit.yoursite.com/oauth&lt;/code&gt;.&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;Get the custom gerrit war file&lt;/p&gt;
+
+&lt;p&gt;There are a few gerrit &lt;a href=&quot;https://gerrit-review.googlesource.com/#/q/project:gerrit+branch:stable-2.10+topic:oauth-authentication-provider&quot;&gt;changes&lt;/a&gt; the plugin needs that haven&amp;#39;t been merged yet. A custom war is available &lt;a href=&quot;https://github.com/davido/gerrit-oauth-provider/releases/tag/v0.1&quot;&gt;here&lt;/a&gt; with the plugin. Download this &lt;code&gt;gerrit-2.10.1-4-a83387b.war&lt;/code&gt; file to the new gerrit server.&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;Backup current gerrit data&lt;/p&gt;
+
+&lt;p&gt;Create tarballs and dump postgres data (if postgres is being used)&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;old-gerrit~$ tar czpf gerrit.tar.gz /srv/gerrit/gerrit
+old-gerrit~$ tar czpf repositories.tar.gz /srv/gerrit/repositories
+old-gerrit~$ pg_dump -xO -Fc reviewdb &amp;gt; reviewdb-$(date +%d-%m-%Y).pdump
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;Restore data to new gerrit server&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;gerrit:/srv/gerrit$ tar xzpf repositories.tar.gz
+gerrit:/srv/gerrit$ tar xzpf gerrit.tar.gz
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;Restore pg data&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;psql : ALTER USER gerrit WITH SUPERUSER;
+$ dropdb reviewdb
+$ createdb reviewdb -O gerrit
+$ pg_restore -O -d reviewdb --role=gerrit reviewdb-20-03-2015.pdump
+psql: ALTER USER gerrit WITH NOSUPERUSER;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;Run migrations&lt;/p&gt;
+
+&lt;p&gt;Gerrit requires cascading migrations to be run for every major version released. For e.g to update from 2.5 to 2.10, we have to run the following&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;$ sudo su - gerrit -s /bin/bash
+$ java -jar gerrit-2.8.6.1.war init -d gerrit
+$ java -jar gerrit-2.9.4.war init -d gerrit
+$ java -jar gerrit-2.9.4.war reindex --recheck-mergeable -d gerrit
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;For the custom jar migration be sure to configure the Oauth plugin&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;$ java -jar gerrit-2.10.1-4-a83387b.war init -d gerrit
+[...]
+OAuth Authentication Provider
+
+Use Google OAuth provider for Gerrit login ? [Y/n]?
+Application client id          : &amp;lt;client-id&amp;gt;
+Application client secret      : &amp;lt;client-secret&amp;gt;
+            confirm password   :
+Link to OpenID accounts? [true]:
+Use GitHub OAuth provider for Gerrit login ? [Y/n]? n
+
+$ java -jar gerrit-2.10.1-4-a83387b.war reindex -d gerrit
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;Switch old gerrit domain name to the new server&lt;/p&gt;
+
+&lt;p&gt;For automatic acount linking to work, the domain name must match the old server. Otherwise the OpenID accounts will not be linked with the new Oauth2 account.&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;Start gerrit server and confirm everything works&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;/bin/gerrit.sh start
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;/ol&gt;
+</content>
+ </entry>
+ 
+ <entry>
    <title>Using nfsroot to boot diskless clients on RHEL</title>
-   <link href="http://raghusiddarth.com/using-nfsroot-to-boot-diskless-clients-on-rhel"/>
+   <link href="http://raghusiddarth.com/blog/using-nfsroot-to-boot-diskless-clients-on-rhel"/>
    <updated>2012-03-20T16:22:09+05:30</updated>
-   <id>http://raghusiddarth.com/using-nfsroot-to-boot-diskless-clients-on-rhel</id>
+   <id>http://raghusiddarth.com/blog/using-nfsroot-to-boot-diskless-clients-on-rhel</id>
    <content type="html">&lt;p&gt;Here is a brief outline on the steps needed to set up a Red Hat Enterprise Linux 6 server to boot diskless clients using nfs.&lt;/p&gt;
 &lt;p&gt;To do this, you need to set up &lt;strong&gt;dhcp&lt;/strong&gt;, &lt;strong&gt;tftp&lt;/strong&gt; (to pxe boot) and a &lt;strong&gt;nfs&lt;/strong&gt; server to serve the rootfs.&lt;/p&gt;
 &lt;p&gt;To keep it simple, I did everything on the same server, but you can easily have multiple servers for each service. The same steps should also work on Fedora (14+) with minor changes.&lt;/p&gt;
@@ -143,9 +211,9 @@ DHCPDARGS=&quot;eth1&quot;&lt;/pre&gt;
  
  <entry>
    <title>List information about block devices using lsblk</title>
-   <link href="http://raghusiddarth.com/list-information-about-block-devices-using-lsblk"/>
+   <link href="http://raghusiddarth.com/blog/list-information-about-block-devices-using-lsblk"/>
    <updated>2011-11-02T23:46:58+05:30</updated>
-   <id>http://raghusiddarth.com/list-information-about-block-devices-using-lsblk</id>
+   <id>http://raghusiddarth.com/blog/list-information-about-block-devices-using-lsblk</id>
    <content type="html">&lt;p&gt;&lt;strong&gt;lsblk&lt;/strong&gt; let&#39;s you view information about block devices on a GNU/Linux system.&lt;/p&gt;
 &lt;p&gt;The output is tree-like and very elegant, with information that would generally require running 3-4 commands. It combines data from mount, df , dmsetup, lvm and raid commands.&lt;/p&gt;
 &lt;p&gt;lsblk get it&#39;s data from the /sys filesystem.&lt;/p&gt;
@@ -169,9 +237,9 @@ util-linux-2.19.1-1.4.fc15.x86_64&lt;/pre&gt;
  
  <entry>
    <title>Using WebDAV to access Box.net files on a Fedora system</title>
-   <link href="http://raghusiddarth.com/using-webdav-to-access-box-net-files-on-a-fedora-system"/>
+   <link href="http://raghusiddarth.com/blog/using-webdav-to-access-box-net-files-on-a-fedora-system"/>
    <updated>2011-10-24T23:46:46+05:30</updated>
-   <id>http://raghusiddarth.com/using-webdav-to-access-box-net-files-on-a-fedora-system</id>
+   <id>http://raghusiddarth.com/blog/using-webdav-to-access-box-net-files-on-a-fedora-system</id>
    <content type="html">&lt;p&gt;&lt;a title=&quot;Dropbox&quot; href=&quot;http://www.dropbox.com&quot; target=&quot;_blank&quot;&gt;Dropbox&lt;/a&gt; is by far the leader in the consumer &quot;cloud storage&quot; space; It is simple to use, feature rich and just works! But, there is only so much you can do with the provided 2 Gb free storage.&lt;/p&gt;
 &lt;p&gt;Enter: &lt;a title=&quot;Box.net&quot; href=&quot;http://www.box.net&quot; target=&quot;_blank&quot;&gt;Box.net&lt;/a&gt;  -- which has offered (for a limited period) 50 Gb free, lifetime storage, for all Ipone and Ipad users. Check &lt;a title=&quot;box.net free 50G storage&quot; href=&quot;http://blog.box.net/2011/10/12/were-giving-ios-users-insane-amounts-of-free-storage-box50gb/&quot; target=&quot;_blank&quot;&gt;here&lt;/a&gt; for the details.&lt;/p&gt;
 &lt;p&gt;However, I soon found out that Box.net does not provide syncing features that Dropbox is so good at, and there are no clients for Linux.&lt;/p&gt;
@@ -208,9 +276,9 @@ http://www.box.net/dav /home/&quot;username&quot;/box  davfs rw,user,noauto 0 0&
  
  <entry>
    <title>How to debug ntp issues?</title>
-   <link href="http://raghusiddarth.com/how-to-debug-ntp-issues"/>
+   <link href="http://raghusiddarth.com/blog/how-to-debug-ntp-issues"/>
    <updated>2011-10-17T02:06:05+05:30</updated>
-   <id>http://raghusiddarth.com/how-to-debug-ntp-issues</id>
+   <id>http://raghusiddarth.com/blog/how-to-debug-ntp-issues</id>
    <content type="html">&lt;p&gt;&lt;a title=&quot;NTP&quot; href=&quot;http://en.wikipedia.org/wiki/Network_Time_Protocol&quot; target=&quot;_blank&quot;&gt;Ntp&lt;/a&gt; has been the de-facto protocol used by computers to synchronize their clocks over a network, and maintain very accurate time, with as much as 10 millisecond precision. The ntp daemon or &lt;a title=&quot;ntpd&quot; href=&quot;http://en.wikipedia.org/wiki/Ntpd&quot;&gt;ntpd&lt;/a&gt; is the reference implementation, that can be found running on almost all Linux (and Unix) systems. This may change in the future though, as &lt;a href=&quot;http://fedoraproject.org/wiki/Features/ChronyDefaultNTP&quot; target=&quot;_blank&quot;&gt;Chrony&lt;/a&gt; is going to replace ntpd, and will be the default ntp client in Fedora 16. Nevertheless, many systems use ntpd, and I don&#39;t see it going away any time soon.&lt;/p&gt;
 &lt;p&gt;In this post, we will take a brief look at how the ntp daemon works and look at ways to debug some common issues.&lt;/p&gt;
 &lt;!--more--&gt;
@@ -299,9 +367,9 @@ offset 0.003607
  
  <entry>
    <title>An Introduction to Shorewall Firewall</title>
-   <link href="http://raghusiddarth.com/an-introduction-to-shorewall-firewall"/>
+   <link href="http://raghusiddarth.com/blog/an-introduction-to-shorewall-firewall"/>
    <updated>2010-10-25T16:41:13+05:30</updated>
-   <id>http://raghusiddarth.com/an-introduction-to-shorewall-firewall</id>
+   <id>http://raghusiddarth.com/blog/an-introduction-to-shorewall-firewall</id>
    <content type="html">&lt;p&gt;&lt;a href=&quot;http://rags.files.wordpress.com/2010/10/gareth-davies-logo3.png&quot;&gt;&lt;img class=&quot;size-medium wp-image-26 alignnone&quot; title=&quot;Shorewall-logo&quot; src=&quot;/assets/gareth-davies-logo3.png?w=300&quot; alt=&quot;Shorewall-logo&quot; width=&quot;300&quot; height=&quot;62&quot; /&gt;&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;Shorewall is a very powerful, high level configuration tool for the Linux firewall subsystem. The Linux kernel has an inbuilt framework to manipulate network packets called Netfilter. A front end tool &quot;Iptables&quot; is used to configure this netfilter subsystem. Iptables is sufficient for simple configurations and personal firewalls. However, for complex configuration scenarios you can easily get lost and bogged down with its syntax and myriad options.&lt;/p&gt;
 &lt;!--more--&gt;
