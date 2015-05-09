@@ -44,6 +44,8 @@
 </script>
 
 
+    <a href="#0" class="cd-top">Top</a>
+
     <div class="sidebar">
   <div class="container sidebar-sticky">
     <div class="sidebar-img">
@@ -122,65 +124,7 @@
 
     <p>Google is phasing out <a href="https://developers.google.com/+/api/auth-migration">OpenID in favour of Oauth 2.0</a> with a deadline on 20th April, 2015 - just 10 days from today. A lot of projects depend on google auth, and can&#39;t easily move to another OpenID provider. I recently had to fix this issue with Jenkins and Gerrit.</p>
 
-<p>Jenkins has a great <a href="https://wiki.jenkins-ci.org/display/JENKINS/Google+Login+Plugin">plugin</a> available for this, which was a piece of cake to install and configure. But it wasn&#39;t so easy with Gerrit. Lot of gerrit users have been asking for <a href="https://code.google.com/p/gerrit/issues/detail?id=2677">Oauth support</a> since May last year; we got that finally when <a href="https://github.com/davido">David Ostrovsky</a> wrote <a href="https://github.com/davido/gerrit-oauth-provider">gerrit-oauth-provider</a> plugin.</p>
-
-<p>I&#39;ve listed the steps I followed below :</p>
-
-<ol>
-<li><p>Oauth2 credentials</p>
-
-<p>Get these from <a href="https://console.developers.google.com">Google Developers Console</a>, note down the <code>client id</code> and <code>client secret</code>. Ensure the redirect url is set to <code>/oauth</code> i.e. <code>http://gerrit.yoursite.com/oauth</code>.</p></li>
-<li><p>Get the custom gerrit war file</p>
-
-<p>There are a few gerrit <a href="https://gerrit-review.googlesource.com/#/q/project:gerrit+branch:stable-2.10+topic:oauth-authentication-provider">changes</a> the plugin needs that haven&#39;t been merged yet. A custom war is available <a href="https://github.com/davido/gerrit-oauth-provider/releases/tag/v0.1">here</a> with the plugin. Download this <code>gerrit-2.10.1-4-a83387b.war</code> file to the new gerrit server.</p></li>
-<li><p>Backup current gerrit data</p>
-
-<p>Create tarballs and dump postgres data (if postgres is being used)</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">old-gerrit~$ tar czpf gerrit.tar.gz /srv/gerrit/gerrit
-old-gerrit~$ tar czpf repositories.tar.gz /srv/gerrit/repositories
-old-gerrit~$ pg_dump -xO -Fc reviewdb &gt; reviewdb-$(date +%d-%m-%Y).pdump
-</code></pre></div></li>
-<li><p>Restore data to new gerrit server</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">gerrit:/srv/gerrit$ tar xzpf repositories.tar.gz
-gerrit:/srv/gerrit$ tar xzpf gerrit.tar.gz
-</code></pre></div></li>
-<li><p>Restore pg data</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">psql : ALTER USER gerrit WITH SUPERUSER;
-$ dropdb reviewdb
-$ createdb reviewdb -O gerrit
-$ pg_restore -O -d reviewdb --role=gerrit reviewdb-20-03-2015.pdump
-psql: ALTER USER gerrit WITH NOSUPERUSER;
-</code></pre></div></li>
-<li><p>Run migrations</p>
-
-<p>Gerrit requires cascading migrations to be run for every major version released. For e.g to update from 2.5 to 2.10, we have to run the following</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">$ sudo su - gerrit -s /bin/bash
-$ java -jar gerrit-2.8.6.1.war init -d gerrit
-$ java -jar gerrit-2.9.4.war init -d gerrit
-$ java -jar gerrit-2.9.4.war reindex --recheck-mergeable -d gerrit
-</code></pre></div>
-<p>For the custom jar migration be sure to configure the Oauth plugin</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">$ java -jar gerrit-2.10.1-4-a83387b.war init -d gerrit
-[...]
-OAuth Authentication Provider
-
-Use Google OAuth provider for Gerrit login ? [Y/n]?
-Application client id          : &lt;client-id&gt;
-Application client secret      : &lt;client-secret&gt;
-            confirm password   :
-Link to OpenID accounts? [true]:
-Use GitHub OAuth provider for Gerrit login ? [Y/n]? n
-
-$ java -jar gerrit-2.10.1-4-a83387b.war reindex -d gerrit
-</code></pre></div></li>
-<li><p>Switch old gerrit domain name to the new server</p>
-
-<p>For automatic acount linking to work, the domain name must match the old server. Otherwise the OpenID accounts will not be linked with the new Oauth2 account.</p></li>
-<li><p>Start gerrit server and confirm everything works</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">/bin/gerrit.sh start
-</code></pre></div></li>
-</ol>
-
+    <a class="continue-reading" href="/blog/migrating-gerrit-from-google-openid-to-outh">continue reading...</a>
   </div>
   
   <div class="post">
@@ -195,125 +139,9 @@ $ java -jar gerrit-2.10.1-4-a83387b.war reindex -d gerrit
     <p>Here is a brief outline on the steps needed to set up a Red Hat Enterprise Linux 6 server to boot diskless clients using nfs.</p>
 <p>To do this, you need to set up <strong>dhcp</strong>, <strong>tftp</strong> (to pxe boot) and a <strong>nfs</strong> server to serve the rootfs.</p>
 <p>To keep it simple, I did everything on the same server, but you can easily have multiple servers for each service. The same steps should also work on Fedora (14+) with minor changes.</p>
-<!--more-->
-<h2><strong>Requirements</strong> :<strong></strong></h2>
-<p><strong>Server</strong> : Fresh RHEL 6 installation (registered to RHN)</p>
-<pre>IP = 192.168.50.254/24 (static) on eth0
 
-# vi /etc/sysconfig/network-scripts/ifcfg-eth0
-DEVICE=eth0
-HWADDR=52:54:00:73:1C:CB
-ONBOOT=yes
-BOOTPROTO=static
-IPADDR=192.168.50.254
-NETMASK=255.255.255.0</pre>
-<p><strong>Client</strong> : A box on the same network (with support for PXE)</p>
-<pre>MAC = 52:54:00:ca:c6:71</pre>
-<h2><strong>On the Server</strong> :</h2>
-<p><strong>Step 1</strong> - Create the nfs rootfs first :</p>
-<pre># mkdir /netboot/
-# rsync -av --progress --exclude=/proc --exclude=/sys --exclude=/netboot / /netboot/</pre>
-<p>(i.e. copy everything from root to the /netboot folder)</p>
-<pre># mkdir /netboot/{proc,sys}
-# vi /netboot/etc/fstab
 
-192.168.50.254:/netboot/  /                      nfs     defaults       1 1
-tmpfs                   /dev/shm                tmpfs   defaults        0 0
-devpts                  /dev/pts                devpts  gid=5,mode=620  0 0
-sysfs                   /sys                    sysfs   defaults        0 0
-proc                    /proc                   proc    defaults        0 0
-
-# vi /netboot/etc/sysconfig/network-scripts/ifcfg-eth0
-
-DEVICE="eth0"
-HWADDR="52:54:00:ca:c6:71"
-ONBOOT="no"
-BOOTPROTO="dhcp"</pre>
-<p><strong>Step 2</strong> - Install and enable services :</p>
-<pre># yum install dhcp syslinux tftp-server -y
-# yum groupinstall "NFS file server" -y
-
-# chkconfig dhcpd on
-# chkconfig tftp on
-# chkconfig nfs on
-# service xinetd start</pre>
-<p>For simplicity, disable the firewall :</p>
-<pre># iptables -F
-# service iptables save</pre>
-<p><strong>Step 3</strong> - configure dhcp server :</p>
-<pre># vi /etc/dhcp/dhcpd.conf
-
-# DHCP Server Configuration file.
-#   see /usr/share/doc/dhcp*/dhcpd.conf.sample
-#   see 'man 5 dhcpd.conf'
-#
-ddns-update-style interim;
-ignore client-updates;
-allow booting;
-allow bootp;
-subnet 192.168.50.0 netmask 255.255.255.0 {
-option routers      192.168.50.254;
-option subnet-mask   255.255.255.0;
-option nis-domain   "domain.org";
-option domain-name  "domain.org";
-option domain-name-servers  192.168.50.254;
-option time-offset    -18000; # Eastern Standard Time
-default-lease-time 21600;
-max-lease-time 43200;
-
-host netboot6 {
-next-server 192.168.50.254;
-hardware ethernet 52:54:00:ca:c6:71;
-fixed-address 192.168.50.100;
-filename "pxelinux.0";
-}
-}
-
-# service dhcpd start</pre>
-<p><strong>Tip</strong> : To restrict dhcpd to a particular interface edit the following file :</p>
-<pre># cat /etc/sysconfig/dhcpd
-# Command line options here
-DHCPDARGS="eth1"</pre>
-<p><strong>Step 4</strong> - enable nfs and export the rootfs :</p>
-<pre># vi /etc/exports
- /netboot/            *(rw,async,no_root_squash)
-
-# service rpcbind start
-# service nfs start</pre>
-<p><strong>Step 5</strong> - generate the initramfs file (here is where the magic happens):</p>
-<pre># yum install dracut-network -y
-# dracut -f /boot/netboot6.img `uname -r` root=dhcp root-path=nfs:192.168.50.254:/netboot/</pre>
-<p><strong>Step 6</strong> - configure pxe :</p>
-<pre># mkdir /var/lib/tftpboot/pxelinux.cfg/
-# cp /usr/share/syslinux/pxelinux.0 /var/lib/tftpboot/
-# cp /boot/netboot6.img /var/lib/tftpboot/
-# cp /boot/vmlinuz-2.6.32-71.el6.x86_64 /var/lib/tftpboot
-
-# vi /var/lib/tftpboot/pxelinux.cfg/default
-
- default netboot6
- timeout 30
- prompt 1
-
- label netboot6
- kernel /vmlinuz-2.6.32-71.el6.x86_64
- append initrd=/netboot6.img rw root=nfs:192.168.50.254:/netboot/ selinux=0 enforcing=0</pre>
-<h2><strong>On the Client</strong> :</h2>
-<p>Configure the client to boot over the network (i.e. enable pxe boot) and start the system.</p>
-<p>The following screen shots show a successful boot :</p>
-<p>
-<a href="http://rags.files.wordpress.com/2012/03/1-pxe-boot-start.png">
-  <img class="alignleft size-thumbnail wp-image-99" title="1-pxe-boot-start" src="/assets/1-pxe-boot-start.png?w=150" alt="" width="150" height="125" />
-</a>
-<a href="http://rags.files.wordpress.com/2012/03/2-load-kernel-initramfs.png"><img class="alignleft size-thumbnail wp-image-100" title="2-load-kernel-initramfs" src="/assets/2-load-kernel-initramfs.png?w=150" alt="" width="150" height="125" /></a>
-
-<a href="http://rags.files.wordpress.com/2012/03/3-start-init1.png"><img class="alignleft size-thumbnail wp-image-102" title="3-start-init" src="/assets/3-start-init1.png?w=150" alt="" width="150" height="125" /></a>
-
-<a href="http://rags.files.wordpress.com/2012/03/4-start-services.png"><img class="alignleft size-thumbnail wp-image-103" title="4-start-services" src="/assets/4-start-services.png?w=150" alt="" width="150" height="125" /></a>
-
-<a href="http://rags.files.wordpress.com/2012/03/5-login.png"><img class="alignleft size-thumbnail wp-image-104" title="5-login" src="/assets/5-login.png?w=150" alt="" width="150" height="125" /></a></p>
-<br/>
-
+    <a class="continue-reading" href="/blog/using-nfsroot-to-boot-diskless-clients-on-rhel">continue reading...</a>
   </div>
   
   <div class="post">
@@ -326,24 +154,9 @@ DHCPDARGS="eth1"</pre>
     <span class="post-date">02 Nov 2011</span>
 
     <p><strong>lsblk</strong> let's you view information about block devices on a GNU/Linux system.</p>
-<p>The output is tree-like and very elegant, with information that would generally require running 3-4 commands. It combines data from mount, df , dmsetup, lvm and raid commands.</p>
-<p>lsblk get it's data from the /sys filesystem.</p>
-<p>Here is lsblk output on my system :</p>
-<pre>$ lsblk
-NAME                       MAJ:MIN RM   SIZE RO MOUNTPOINT
-sda                          8:0    0 298.1G  0
-├─sda1                       8:1    0   500M  0 /boot
-└─sda2                       8:2    0 297.6G  0
-  ├─vg_rags-lv_swap (dm-0) 253:0    0   5.8G  0 [SWAP]
-  ├─vg_rags-lv_root (dm-1) 253:1    0    50G  0 /
-  └─vg_rags-lv_home (dm-2) 253:2    0 241.8G  0
-    └─home (dm-3)          253:3    0 241.8G  0 /home
-sr0                         11:0    1  1024M  0</pre>
-<p>lsblk is part of the util-liunx package :</p>
-<pre>$ rpm -qf `which lsblk`
-util-linux-2.19.1-1.4.fc15.x86_64</pre>
-<p>Running <strong>fdisk -l</strong> gives similar data. But, fdisk requires root privileges, and It does not understand dm or lvm partitions.</p>
 
+
+    <a class="continue-reading" href="/blog/list-information-about-block-devices-using-lsblk">continue reading...</a>
   </div>
   
   <div class="post">
@@ -356,37 +169,9 @@ util-linux-2.19.1-1.4.fc15.x86_64</pre>
     <span class="post-date">24 Oct 2011</span>
 
     <p><a title="Dropbox" href="http://www.dropbox.com" target="_blank">Dropbox</a> is by far the leader in the consumer "cloud storage" space; It is simple to use, feature rich and just works! But, there is only so much you can do with the provided 2 Gb free storage.</p>
-<p>Enter: <a title="Box.net" href="http://www.box.net" target="_blank">Box.net</a>  -- which has offered (for a limited period) 50 Gb free, lifetime storage, for all Ipone and Ipad users. Check <a title="box.net free 50G storage" href="http://blog.box.net/2011/10/12/were-giving-ios-users-insane-amounts-of-free-storage-box50gb/" target="_blank">here</a> for the details.</p>
-<p>However, I soon found out that Box.net does not provide syncing features that Dropbox is so good at, and there are no clients for Linux.</p>
-<p>Lucky, for Linux users, a <a title="WebDAV" href="http://en.wikipedia.org/wiki/WebDAV" target="_blank">WebDAV</a> interface exists.</p>
-<!--more-->
-<p>I used fedora 15, but the instructions are generic enough that they should work on any release or any Linux distribution for that matter.</p>
-<p>1. Create a folder to mount the box.net share :</p>
-<pre>$ mkdir ~/box</pre>
-<p>2. Install davfs2 :</p>
-<pre>$ sudo yum install davfs2</pre>
-<h6>Note : Nautilus does support webdav, but I've found it to be buggy.</h6>
-<p>3. Run the following to add your user to the davfs2 group :</p>
-<pre>$ sudo /sbin/usermod -a -G davfs2 "username"</pre>
-<p>4. Disable locking, as this causes problems with box.net :</p>
-<pre>$ mkdir ~/.davfs2
-$ vi ~/.davfs2/davfs2.conf</pre>
-<p>and add the following :</p>
-<pre>use_locks 0</pre>
-<p>5. (Optional) If you do not want to be prompted for the box.net username/password :</p>
-<pre>$ vi ~/.davfs2/secrets</pre>
-<p>and add the following :</p>
-<pre>http://www.box.net/dav  user@email.com   password</pre>
-<p>6. Add the following entry to /etc/fstab :</p>
-<pre>$ sudo vi /etc/fstab
 
-http://www.box.net/dav /home/"username"/box  davfs rw,user,noauto 0 0</pre>
-<h6>Note: Don't forget to replace "username" with your actual username.</h6>
-<p>7. Finally, to mount the folder run :</p>
-<pre>$ mount  ~/box</pre>
-<p>and the files from your box.net account should be visible.</p>
-<p>Use "rsync", "unison", or just plain "cp" to sync files directly to box.net. I find this very convenient for backups and file sharing.</p>
 
+    <a class="continue-reading" href="/blog/using-webdav-to-access-box-net-files-on-a-fedora-system">continue reading...</a>
   </div>
   
   <div class="post">
@@ -399,89 +184,9 @@ http://www.box.net/dav /home/"username"/box  davfs rw,user,noauto 0 0</pre>
     <span class="post-date">17 Oct 2011</span>
 
     <p><a title="NTP" href="http://en.wikipedia.org/wiki/Network_Time_Protocol" target="_blank">Ntp</a> has been the de-facto protocol used by computers to synchronize their clocks over a network, and maintain very accurate time, with as much as 10 millisecond precision. The ntp daemon or <a title="ntpd" href="http://en.wikipedia.org/wiki/Ntpd">ntpd</a> is the reference implementation, that can be found running on almost all Linux (and Unix) systems. This may change in the future though, as <a href="http://fedoraproject.org/wiki/Features/ChronyDefaultNTP" target="_blank">Chrony</a> is going to replace ntpd, and will be the default ntp client in Fedora 16. Nevertheless, many systems use ntpd, and I don't see it going away any time soon.</p>
-<p>In this post, we will take a brief look at how the ntp daemon works and look at ways to debug some common issues.</p>
-<!--more-->
-<p>When the ntp service first starts, a clock selection process begins, with the daemon polling the servers configured in ntp.conf, at 64 second intervals. Depending on the configuration, this process can take 5 to 10 minutes. To check the status, run the following :</p>
-<pre># ntpq
-ntpq&gt; peers
-     remote           refid           st t when poll reach   delay   offset  jitter
-=======================================================================================
-*time.ferea.org       8.16.24.15       2 u  972 1024  377   28.066   -0.181   4.126
-+dg1.rieta.net        15.15.26.3       3 u  467 1024  377  141.664  -23.531   0.140
- mighty.poclabs.      .STEP.          16 u    - 1024    0    0.000    0.000   0.000
- LOCAL(0)             .LOCL.          10 l   32   64  377    0.000    0.000   0.001</pre>
-<p>During the clock selection process the refid column should read <strong>.INIT.</strong>  and the st (stratum) set to 16.</p>
-<p>The * indicates that this particular association is the chosen ntp source.<br />
-The  + indicates that this ntp <strong>peer</strong> is a candidate (a peer is a ntp server on the same stratum).<br />
-An empty space indicates that the server is unreachable and therefore rejected (stratum 16).</p>
-<p>If the current local time is greater than 1000 seconds, ntpd will not set the clock. The time can then be manually set using the "date" command or using "ntpdate" :</p>
-<pre># ntpdate time.ferea.org</pre>
-<p>If no ntp servers get selected, run the following :</p>
-<pre>ntpq&gt; as
 
-ind assID status  conf reach auth condition  last_event cnt
-===========================================================
-  1 29581  9624   yes   yes  none  sys.peer   reachable  1
-  2 29582  9014   yes   yes  none  candidat   reachable  1
-  4 29583  8000   yes   yes  none    reject
-  5 29584  9024   yes   yes  none    reject   reachable  2</pre>
-<p>The associations shown above correspond to the entries shown in the peer command. Most of the fields are self-explanatory,  except the status column. Use the table <a href="http://www.eecis.udel.edu/~mills/ntp/html/decode.html#peer" target="_blank">here</a> to decipher the status codes.</p>
-<p>Use the "assID" for the following command  :</p>
-<pre>ntpq&gt; rv 29583
 
-assID=62236 status=9014 reach, conf, 1 event, event_reach,
-srcadr=192.168.23.1, srcport=123, dstadr=192.168.247.11, dstport=123,
-leap=00, stratum=3, precision=-6, rootdelay=218.750,
-rootdispersion=1381.516, refid=24.1.4.14, reach=377, unreach=0,
-hmode=3, pmode=4, hpoll=10, ppoll=10, flash=400 peer_dist, keyid=0,
-ttl=0, offset=-29.750, delay=0.316, dispersion=30.400, jitter=1.136,
-reftime=d1e4505b.d456f5b0  Thu, Aug  4 2011  0:55:23.829,
-org=d1e4c793.e477ba4b  Thu, Aug  4 2011  9:24:03.892,
-rec=d1e4c793.ec1fc3ac  Thu, Aug  4 2011  9:24:03.922,
-xmt=d1e4c793.ec0b133c  Thu, Aug  4 2011  9:24:03.922,
-filtdelay=     0.32    0.40    0.33    0.45    0.42    0.42    0.33    0.38,
-filtoffset=  -29.75  -30.89  -29.97  -30.11  -30.15  -29.20  -30.25  -30.36,
-filtdisp=     15.63   31.00   46.38   61.75   77.14   92.52  107.91  123.28</pre>
-<p>The flash codes in the rv command output give the reason for the ntp source to get rejected :</p>
-<pre>flash=400 peer_dist</pre>
-<p>This flash code corresponds to "distance threshold exceeded". Check all the flash codes <a href="http://www.eecis.udel.edu/~mills/ntp/html/decode.html#flash" target="_blank">here</a>.</p>
-<p>Also, check the following variables :</p>
-<pre>rootdispersion=1381.516
-dispersion=30.400
-jitter=1.136</pre>
-<p>Dispersion is an estimate of error, and a large value indicates that the ntp server is not a reliable source, and can indicate conditions such as severe packet loss and network congestion.</p>
-<p>Another useful aid is to run ntpdate with the -d switch :</p>
-<pre># ntpdate -d time.rhl.com
-
-17 Oct 00:20:51 ntpdate[26388]: ntpdate 4.2.2p1@1.1570-o Thu Nov 26 11:34:35 UTC 2009 (1)
-Looking for host time.rhl.com and service ntp
-host found : time.rhl.com
-transmit(66.125.13.54)
-receive(66.125.13.54)
-transmit(66.125.13.54)
-receive(66.125.13.54)
-transmit(66.125.13.54)
-receive(66.125.13.54)
-transmit(66.125.13.54)
-receive(66.125.13.54)
-transmit(66.125.13.54)
-server 66.125.13.54, port 123
-stratum 1, precision -16, leap 00, trust 000
-refid [CDMA], delay 0.32297, dispersion 0.00040
-transmitted 4, in filter 4
-reference time:    d245a5fe.2fdfe09b  Mon, Oct 17 2011  0:20:38.187
-originate timestamp: d245a60c.e2117d1e  Mon, Oct 17 2011  0:20:52.883
-transmit timestamp:  d245a60c.b9c9b413  Mon, Oct 17 2011  0:20:52.725
-filter delay:  0.32361  0.32382  0.32297  0.32619
-         0.00000  0.00000  0.00000  0.00000
-filter offset: 0.003892 0.004005 0.003607 0.004972
-         0.000000 0.000000 0.000000 0.000000
-delay 0.32297, dispersion 0.00040
-offset 0.003607
-17 Oct 00:20:53 ntpdate[26388]: adjust time server 66.187.233.4 offset 0.003607 sec</pre>
-<p>Most, if not all ntp issues can be resolved with the information gathered from the above commands.</p>
-<p>Do you have any tips on debugging ntp problems?</p>
-
+    <a class="continue-reading" href="/blog/how-to-debug-ntp-issues">continue reading...</a>
   </div>
   
 </div>
@@ -514,6 +219,7 @@ offset 0.003607
 
     </div>
 
-
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+    <script src="/public/js/main.js"></script>
   </body>
 </html>

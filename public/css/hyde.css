@@ -75,33 +75,27 @@ html {
   color: #fff;
 }
 
+.sidebar-img img {
+  display: inline-block;
+  border-radius: 50%;
+  height: 20%;
+  width: 20%;
+}
+
 /* About section */
 @media (min-width: 48em) {
 .sidebar-img {
   margin-top: 1rem;
 }
-}
 
 .sidebar-img img {
-  border-radius: 50%;
+  height: 75%;
+  width: 75%;
 }
-
-@media (max-width: 48em) {
-  .sidebar-img img {
-    height: 25%;
-    width: 25%;
-  }
-}
-
-@media (min-width: 64em) {
-  .sidebar-img img {
-    height: 75%;
-    width: 75%;
-  }
 }
 
 .sidebar-social {
-  display: table;
+  display: inline-block;
 }
 
 .sidebar-social a {
@@ -208,14 +202,83 @@ a.sidebar-nav-item:focus {
  */
 
 .sidebar-footer {
-  position: fixed;
-  bottom: 0;
   margin-bottom: 1rem;
   line-height: 1;
 }
 
 .sidebar-footer small {
-  font-size: 14px;
+  font-size: 12px;
+}
+
+/*
+ * Scroll to top
+ *
+ * from : http://codyhouse.co/gem/back-to-top
+ *
+ */
+
+.cd-top {
+  display: inline-block;
+  height: 30px;
+  width: 30px;
+  position: fixed;
+  bottom: 100px;
+  right: 10px;
+  z-index: 10;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.05);
+  /* image replacement properties */
+  overflow: hidden;
+  text-indent: 100%;
+  white-space: nowrap;
+  background: rgba(32, 32, 32, 0.1) url(/public/cd-top-arrow.svg) no-repeat center 50%;
+  visibility: hidden;
+  opacity: 0;
+  -webkit-transition: opacity .3s 0s, visibility 0s .3s;
+  -moz-transition: opacity .3s 0s, visibility 0s .3s;
+  transition: opacity .3s 0s, visibility 0s .3s;
+}
+
+.cd-top.cd-is-visible, .cd-top.cd-fade-out, .no-touch .cd-top:hover {
+  -webkit-transition: opacity .3s 0s, visibility 0s 0s;
+  -moz-transition: opacity .3s 0s, visibility 0s 0s;
+  transition: opacity .3s 0s, visibility 0s 0s;
+}
+
+.cd-top.cd-is-visible {
+  /* the button becomes visible */
+  visibility: visible;
+  opacity: 1;
+}
+
+.cd-top.cd-fade-out {
+  /* if the user keeps scrolling down, the button is out of focus and becomes less visible */
+  opacity: .5;
+}
+
+.no-touch .cd-top:hover {
+  background-color: #e86256;
+  opacity: 1;
+}
+
+.cd-top {
+    right: 20px;
+    bottom: 20px;
+}
+
+@media only screen and (min-width: 48em) {
+.cd-top {
+  height: 40px;
+  width: 40px;
+  right: 15rem;
+  bottom: 30px;
+}
+}
+
+@media only screen and (min-width: 58em) {
+.cd-top {
+  height: 50px;
+  width: 50px;
+}
 }
 
 /*

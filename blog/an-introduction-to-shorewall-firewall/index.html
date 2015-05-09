@@ -44,6 +44,8 @@
 </script>
 
 
+    <a href="#0" class="cd-top">Top</a>
+
     <div class="sidebar">
   <div class="container sidebar-sticky">
     <div class="sidebar-img">
@@ -114,7 +116,7 @@
   <span class="post-date">25 Oct 2010</span>
   <p><a href="http://rags.files.wordpress.com/2010/10/gareth-davies-logo3.png"><img class="size-medium wp-image-26 alignnone" title="Shorewall-logo" src="/assets/gareth-davies-logo3.png?w=300" alt="Shorewall-logo" width="300" height="62" /></a></p>
 <p>Shorewall is a very powerful, high level configuration tool for the Linux firewall subsystem. The Linux kernel has an inbuilt framework to manipulate network packets called Netfilter. A front end tool "Iptables" is used to configure this netfilter subsystem. Iptables is sufficient for simple configurations and personal firewalls. However, for complex configuration scenarios you can easily get lost and bogged down with its syntax and myriad options.</p>
-<!--more-->
+
 <p>Shorewall provides a high level abstraction and keeps the underlying complexity hidden. This makes firewall configurations easier to design and manage. Think of it as, Shorewall is to Iptables, what C is to assembly language. Also, keep in mind that Shorewall is not a daemon that runs in the background. It simply generates the rules, applies them and gets out-of-the-way.</p>
 <p>To start with, I will cover a simple two interface firewall example configuration using Shorewall. We can move to more complex configurations in future posts.</p>
 <p>In this scenario we have a server with one ADSL PPPOE connection - ppp0 and a local network on eth0. I have chosen this setup to hopefully explain the core concepts behind shorewall and set a stage for later enhancements.</p>
@@ -658,6 +660,7 @@ or
 
     </div>
 
-
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+    <script src="/public/js/main.js"></script>
   </body>
 </html>

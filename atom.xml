@@ -4,7 +4,7 @@
  <title>Raghu Udiyar</title>
  <link href="http://raghusiddarth.com/atom.xml" rel="self"/>
  <link href="http://raghusiddarth.com/"/>
- <updated>2015-04-10T13:01:56+05:30</updated>
+ <updated>2015-05-09T20:15:36+05:30</updated>
  <id>http://raghusiddarth.com</id>
  <author>
    <name>Raghu Udiyar</name>
@@ -88,7 +88,7 @@ $ java -jar gerrit-2.10.1-4-a83387b.war reindex -d gerrit
    <content type="html">&lt;p&gt;Here is a brief outline on the steps needed to set up a Red Hat Enterprise Linux 6 server to boot diskless clients using nfs.&lt;/p&gt;
 &lt;p&gt;To do this, you need to set up &lt;strong&gt;dhcp&lt;/strong&gt;, &lt;strong&gt;tftp&lt;/strong&gt; (to pxe boot) and a &lt;strong&gt;nfs&lt;/strong&gt; server to serve the rootfs.&lt;/p&gt;
 &lt;p&gt;To keep it simple, I did everything on the same server, but you can easily have multiple servers for each service. The same steps should also work on Fedora (14+) with minor changes.&lt;/p&gt;
-&lt;!--more--&gt;
+
 &lt;h2&gt;&lt;strong&gt;Requirements&lt;/strong&gt; :&lt;strong&gt;&lt;/strong&gt;&lt;/h2&gt;
 &lt;p&gt;&lt;strong&gt;Server&lt;/strong&gt; : Fresh RHEL 6 installation (registered to RHN)&lt;/p&gt;
 &lt;pre&gt;IP = 192.168.50.254/24 (static) on eth0
@@ -215,6 +215,7 @@ DHCPDARGS=&quot;eth1&quot;&lt;/pre&gt;
    <updated>2011-11-02T23:46:58+05:30</updated>
    <id>http://raghusiddarth.com/blog/list-information-about-block-devices-using-lsblk</id>
    <content type="html">&lt;p&gt;&lt;strong&gt;lsblk&lt;/strong&gt; let&#39;s you view information about block devices on a GNU/Linux system.&lt;/p&gt;
+
 &lt;p&gt;The output is tree-like and very elegant, with information that would generally require running 3-4 commands. It combines data from mount, df , dmsetup, lvm and raid commands.&lt;/p&gt;
 &lt;p&gt;lsblk get it&#39;s data from the /sys filesystem.&lt;/p&gt;
 &lt;p&gt;Here is lsblk output on my system :&lt;/p&gt;
@@ -241,6 +242,7 @@ util-linux-2.19.1-1.4.fc15.x86_64&lt;/pre&gt;
    <updated>2011-10-24T23:46:46+05:30</updated>
    <id>http://raghusiddarth.com/blog/using-webdav-to-access-box-net-files-on-a-fedora-system</id>
    <content type="html">&lt;p&gt;&lt;a title=&quot;Dropbox&quot; href=&quot;http://www.dropbox.com&quot; target=&quot;_blank&quot;&gt;Dropbox&lt;/a&gt; is by far the leader in the consumer &quot;cloud storage&quot; space; It is simple to use, feature rich and just works! But, there is only so much you can do with the provided 2 Gb free storage.&lt;/p&gt;
+
 &lt;p&gt;Enter: &lt;a title=&quot;Box.net&quot; href=&quot;http://www.box.net&quot; target=&quot;_blank&quot;&gt;Box.net&lt;/a&gt;  -- which has offered (for a limited period) 50 Gb free, lifetime storage, for all Ipone and Ipad users. Check &lt;a title=&quot;box.net free 50G storage&quot; href=&quot;http://blog.box.net/2011/10/12/were-giving-ios-users-insane-amounts-of-free-storage-box50gb/&quot; target=&quot;_blank&quot;&gt;here&lt;/a&gt; for the details.&lt;/p&gt;
 &lt;p&gt;However, I soon found out that Box.net does not provide syncing features that Dropbox is so good at, and there are no clients for Linux.&lt;/p&gt;
 &lt;p&gt;Lucky, for Linux users, a &lt;a title=&quot;WebDAV&quot; href=&quot;http://en.wikipedia.org/wiki/WebDAV&quot; target=&quot;_blank&quot;&gt;WebDAV&lt;/a&gt; interface exists.&lt;/p&gt;
@@ -280,6 +282,7 @@ http://www.box.net/dav /home/&quot;username&quot;/box  davfs rw,user,noauto 0 0&
    <updated>2011-10-17T02:06:05+05:30</updated>
    <id>http://raghusiddarth.com/blog/how-to-debug-ntp-issues</id>
    <content type="html">&lt;p&gt;&lt;a title=&quot;NTP&quot; href=&quot;http://en.wikipedia.org/wiki/Network_Time_Protocol&quot; target=&quot;_blank&quot;&gt;Ntp&lt;/a&gt; has been the de-facto protocol used by computers to synchronize their clocks over a network, and maintain very accurate time, with as much as 10 millisecond precision. The ntp daemon or &lt;a title=&quot;ntpd&quot; href=&quot;http://en.wikipedia.org/wiki/Ntpd&quot;&gt;ntpd&lt;/a&gt; is the reference implementation, that can be found running on almost all Linux (and Unix) systems. This may change in the future though, as &lt;a href=&quot;http://fedoraproject.org/wiki/Features/ChronyDefaultNTP&quot; target=&quot;_blank&quot;&gt;Chrony&lt;/a&gt; is going to replace ntpd, and will be the default ntp client in Fedora 16. Nevertheless, many systems use ntpd, and I don&#39;t see it going away any time soon.&lt;/p&gt;
+
 &lt;p&gt;In this post, we will take a brief look at how the ntp daemon works and look at ways to debug some common issues.&lt;/p&gt;
 &lt;!--more--&gt;
 &lt;p&gt;When the ntp service first starts, a clock selection process begins, with the daemon polling the servers configured in ntp.conf, at 64 second intervals. Depending on the configuration, this process can take 5 to 10 minutes. To check the status, run the following :&lt;/p&gt;
@@ -372,7 +375,7 @@ offset 0.003607
    <id>http://raghusiddarth.com/blog/an-introduction-to-shorewall-firewall</id>
    <content type="html">&lt;p&gt;&lt;a href=&quot;http://rags.files.wordpress.com/2010/10/gareth-davies-logo3.png&quot;&gt;&lt;img class=&quot;size-medium wp-image-26 alignnone&quot; title=&quot;Shorewall-logo&quot; src=&quot;/assets/gareth-davies-logo3.png?w=300&quot; alt=&quot;Shorewall-logo&quot; width=&quot;300&quot; height=&quot;62&quot; /&gt;&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;Shorewall is a very powerful, high level configuration tool for the Linux firewall subsystem. The Linux kernel has an inbuilt framework to manipulate network packets called Netfilter. A front end tool &quot;Iptables&quot; is used to configure this netfilter subsystem. Iptables is sufficient for simple configurations and personal firewalls. However, for complex configuration scenarios you can easily get lost and bogged down with its syntax and myriad options.&lt;/p&gt;
-&lt;!--more--&gt;
+
 &lt;p&gt;Shorewall provides a high level abstraction and keeps the underlying complexity hidden. This makes firewall configurations easier to design and manage. Think of it as, Shorewall is to Iptables, what C is to assembly language. Also, keep in mind that Shorewall is not a daemon that runs in the background. It simply generates the rules, applies them and gets out-of-the-way.&lt;/p&gt;
 &lt;p&gt;To start with, I will cover a simple two interface firewall example configuration using Shorewall. We can move to more complex configurations in future posts.&lt;/p&gt;
 &lt;p&gt;In this scenario we have a server with one ADSL PPPOE connection - ppp0 and a local network on eth0. I have chosen this setup to hopefully explain the core concepts behind shorewall and set a stage for later enhancements.&lt;/p&gt;
