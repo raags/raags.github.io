@@ -11,7 +11,7 @@
 
   <title>
     
-      List information about block devices using lsblk &middot; Raghu Udiyar
+      Vagrant global configuration and plugins &middot; Raghu Udiyar
     
   </title>
 
@@ -112,33 +112,43 @@
 
     <div class="content container">
       <div class="post">
-  <h1 class="post-title">List information about block devices using lsblk</h1>
-  <span class="post-date">02 Nov 2011</span>
-  <p><strong>lsblk</strong> let's you view information about block devices on a GNU/Linux system.</p>
+  <h1 class="post-title">Vagrant global configuration and plugins</h1>
+  <span class="post-date">11 May 2015</span>
+  <p><a href="http://vagrantup.com">Vagrant</a> is an invaluable tool for getting virtual machines quickly configured and setup. I use Vagrant extensively to write and test ansible playbooks and roles. While Vagrant does lot of things for you out of the box, adding some plugins can make it even more awesome.</p>
 
-<p>The output is tree-like and very elegant, with information that would generally require running 3-4 commands. It combines data from mount, df , dmsetup, lvm and raid commands.</p>
-<p>lsblk get it's data from the /sys filesystem.</p>
-<p>Here is lsblk output on my system :</p>
-<pre>$ lsblk
-NAME                       MAJ:MIN RM   SIZE RO MOUNTPOINT
-sda                          8:0    0 298.1G  0
-├─sda1                       8:1    0   500M  0 /boot
-└─sda2                       8:2    0 297.6G  0
-  ├─vg_rags-lv_swap (dm-0) 253:0    0   5.8G  0 [SWAP]
-  ├─vg_rags-lv_root (dm-1) 253:1    0    50G  0 /
-  └─vg_rags-lv_home (dm-2) 253:2    0 241.8G  0
-    └─home (dm-3)          253:3    0 241.8G  0 /home
-sr0                         11:0    1  1024M  0</pre>
-<p>lsblk is part of the util-liunx package :</p>
-<pre>$ rpm -qf `which lsblk`
-util-linux-2.19.1-1.4.fc15.x86_64</pre>
-<p>Running <strong>fdisk -l</strong> gives similar data. But, fdisk requires root privileges, and It does not understand dm or lvm partitions.</p>
+<p>Vagrant <a href="https://github.com/mitchellh/vagrant/blob/master/lib/vagrant/environment.rb#L404">looks</a> for a global Vagrantfile in <code>~/.vagrant.d</code> whenever <code>vagrant up</code> is run. This can be used to setup global options that are applied to all vagrant environments. I couldn&#39;t find this documented anywhere, but this feature saves me from duplicating lot of text in every Vagrantfile.</p>
+
+<p>Here is my global Vagrantfile :</p>
+
+<script src="https://gist.github.com/9672366ccd2abcde9b27.js"> </script>
+
+<p>Copy the above configuration to <code>~/.vagrant.d/Vagrantfile</code>.</p>
+
+<p>The plugins are :</p>
+
+<ol>
+<li><a href="https://github.com/adrienthebo/vagrant-auto_network">Auto networking</a> - Hands off vagrant networking</li>
+<li><a href="https://github.com/smdahlen/vagrant-hostmanager">Hostmanager</a> - Name resolution using hosts file</li>
+<li><a href="https://github.com/fgrehm/vagrant-cachier">Vagrant Cachier</a> - Cache and share data across vms for apt, yum, chef and <a href="http://fgrehm.viewdocs.io/vagrant-cachier">many more</a></li>
+<li><a href="https://github.com/tmatilai/vagrant-proxyconf">Vagrant Proxy</a> - Configure a general caching proxy</li>
+</ol>
+
+<p>I use <a href="http://www.pps.univ-paris-diderot.fr/%7Ejch/software/polipo/">polipo</a> as the proxy, which I use for my host system as well.</p>
+
+<p>With the above most of my Vagrantfiles are just :</p>
+<div class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="no">Vagrant</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">config</span><span class="o">|</span>
+  <span class="n">config</span><span class="o">.</span><span class="n">vm</span><span class="o">.</span><span class="n">define</span> <span class="s2">&quot;test&quot;</span> <span class="k">do</span> <span class="o">|</span><span class="n">node</span><span class="o">|</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">vm</span><span class="o">.</span><span class="n">hostname</span> <span class="o">=</span> <span class="s2">&quot;test&quot;</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</code></pre></div>
+<p>How do you use Vagrant? Let me know if you have any tips to improve my Vagrant workflow in the comments below.</p>
 
 </div>
 
 <p class="message">
 If you liked this post, you can
-<a href="https://twitter.com/intent/tweet?url=http://raghusiddarth.com/blog/list-information-about-block-devices-using-lsblk&text=List information about block devices using lsblk&via=rag_s" target="_blank">
+<a href="https://twitter.com/intent/tweet?url=http://raghusiddarth.com/blog/vagrant-global-configuration-and-plugins&text=Vagrant global configuration and plugins&via=rag_s" target="_blank">
     share it with your followers</a>
 or
 <a href="https://twitter.com/rag_s">
@@ -149,15 +159,6 @@ or
 <div class="related">
   <h2>Related Posts</h2>
   <ul class="related-posts">
-    
-      <li>
-        <h3>
-          <a href="/blog/vagrant-global-configuration-and-plugins">
-            Vagrant global configuration and plugins
-            <small>11 May 2015</small>
-          </a>
-        </h3>
-      </li>
     
       <li>
         <h3>
@@ -177,6 +178,15 @@ or
         </h3>
       </li>
     
+      <li>
+        <h3>
+          <a href="/blog/list-information-about-block-devices-using-lsblk">
+            List information about block devices using lsblk
+            <small>02 Nov 2011</small>
+          </a>
+        </h3>
+      </li>
+    
   </ul>
 </div>
 
@@ -185,7 +195,7 @@ or
 <div id="disqus_thread"></div>
 <script type="text/javascript">
   var disqus_shortname = 'raghusiddarth';
-  // var disqus_identifier = "/blog/list-information-about-block-devices-using-lsblk";
+  // var disqus_identifier = "/blog/vagrant-global-configuration-and-plugins";
 
       /* * * DON'T EDIT BELOW THIS LINE * * */
       (function() {
