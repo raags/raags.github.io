@@ -4,13 +4,26 @@
  <title>Raghu Udiyar</title>
  <link href="http://raghusiddarth.com/atom.xml" rel="self"/>
  <link href="http://raghusiddarth.com/"/>
- <updated>2015-05-11T12:38:18+05:30</updated>
+ <updated>2015-05-30T14:02:54+05:30</updated>
  <id>http://raghusiddarth.com</id>
  <author>
    <name>Raghu Udiyar</name>
    <email>raghusiddarth@gmail.com</email>
  </author>
 
+ 
+ <entry>
+   <title>Test for mutually exclusive options in shell scripts</title>
+   <link href="http://raghusiddarth.com/blog/testing-mutually-exclusive-options"/>
+   <updated>2015-05-30T00:00:00+05:30</updated>
+   <id>http://raghusiddarth.com/blog/testing-mutually-exclusive-options</id>
+   <content type="html">&lt;p&gt;I used the following snippet today to check for mutually exclusive options in a script I was writing. This was a very simple, automated script, so I did not feel the need to use &lt;a href=&quot;http://www.gnu.org/software/libc/manual/html_node/Getopt.html&quot;&gt;getopts&lt;/a&gt;, for which there are &lt;a href=&quot;http://stackoverflow.com/questions/21721070/getopts-checking-for-mutually-exclusive-arguments&quot;&gt;other&lt;/a&gt; &lt;a href=&quot;http://stackoverflow.com/questions/21695565/how-to-use-mutually-exclusive-flags-in-your-shell-and-add-an-optional-argument-f&quot;&gt;ways&lt;/a&gt; to do the same.&lt;/p&gt;
+
+&lt;script src=&quot;https://gist.github.com/d9739c0bc4d68048dcce.js&quot;&gt; &lt;/script&gt;
+
+&lt;p&gt;Another approach would be to use if statements, but I find that cumbersome and unwieldy.&lt;/p&gt;
+</content>
+ </entry>
  
  <entry>
    <title>Vagrant global configuration and plugins</title>

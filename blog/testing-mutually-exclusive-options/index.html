@@ -11,7 +11,7 @@
 
   <title>
     
-      Vagrant global configuration and plugins &middot; Raghu Udiyar
+      Test for mutually exclusive options in shell scripts &middot; Raghu Udiyar
     
   </title>
 
@@ -112,43 +112,19 @@
 
     <div class="content container">
       <div class="post">
-  <h1 class="post-title">Vagrant global configuration and plugins</h1>
-  <span class="post-date">11 May 2015</span>
-  <p><a href="http://vagrantup.com">Vagrant</a> is an invaluable tool for getting virtual machines quickly configured and setup. I use Vagrant extensively to write and test ansible playbooks and roles. While Vagrant does lot of things for you out of the box, adding some plugins can make it even more awesome.</p>
+  <h1 class="post-title">Test for mutually exclusive options in shell scripts</h1>
+  <span class="post-date">30 May 2015</span>
+  <p>I used the following snippet today to check for mutually exclusive options in a script I was writing. This was a very simple, automated script, so I did not feel the need to use <a href="http://www.gnu.org/software/libc/manual/html_node/Getopt.html">getopts</a>, for which there are <a href="http://stackoverflow.com/questions/21721070/getopts-checking-for-mutually-exclusive-arguments">other</a> <a href="http://stackoverflow.com/questions/21695565/how-to-use-mutually-exclusive-flags-in-your-shell-and-add-an-optional-argument-f">ways</a> to do the same.</p>
 
-<p>Vagrant <a href="https://github.com/mitchellh/vagrant/blob/master/lib/vagrant/environment.rb#L404">looks</a> for a global Vagrantfile in <code>~/.vagrant.d</code> whenever <code>vagrant up</code> is run. This can be used to setup global options that are applied to all vagrant environments. I couldn&#39;t find this documented anywhere, but this feature saves me from duplicating lot of text in every Vagrantfile.</p>
+<script src="https://gist.github.com/d9739c0bc4d68048dcce.js"> </script>
 
-<p>Here is my global Vagrantfile :</p>
-
-<script src="https://gist.github.com/9672366ccd2abcde9b27.js"> </script>
-
-<p>Copy the above configuration to <code>~/.vagrant.d/Vagrantfile</code>.</p>
-
-<p>The plugins are :</p>
-
-<ol>
-<li><a href="https://github.com/adrienthebo/vagrant-auto_network">Auto networking</a> - Hands off vagrant networking</li>
-<li><a href="https://github.com/smdahlen/vagrant-hostmanager">Hostmanager</a> - Name resolution using hosts file</li>
-<li><a href="https://github.com/fgrehm/vagrant-cachier">Vagrant Cachier</a> - Cache and share data across vms for apt, yum, chef and <a href="http://fgrehm.viewdocs.io/vagrant-cachier">many more</a></li>
-<li><a href="https://github.com/tmatilai/vagrant-proxyconf">Vagrant Proxy</a> - Configure a general caching proxy</li>
-</ol>
-
-<p>I use <a href="http://www.pps.univ-paris-diderot.fr/%7Ejch/software/polipo/">polipo</a> as the proxy, which I use for my host system as well.</p>
-
-<p>With the above most of my Vagrantfiles are just :</p>
-<div class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="no">Vagrant</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">config</span><span class="o">|</span>
-  <span class="n">config</span><span class="o">.</span><span class="n">vm</span><span class="o">.</span><span class="n">define</span> <span class="s2">&quot;test&quot;</span> <span class="k">do</span> <span class="o">|</span><span class="n">node</span><span class="o">|</span>
-    <span class="n">node</span><span class="o">.</span><span class="n">vm</span><span class="o">.</span><span class="n">hostname</span> <span class="o">=</span> <span class="s2">&quot;test&quot;</span>
-  <span class="k">end</span>
-<span class="k">end</span>
-</code></pre></div>
-<p>How do you use Vagrant? Let me know if you have any tips to improve my Vagrant workflow in the comments below.</p>
+<p>Another approach would be to use if statements, but I find that cumbersome and unwieldy.</p>
 
 </div>
 
 <p class="message">
 If you liked this post, you can
-<a href="https://twitter.com/intent/tweet?url=http://raghusiddarth.com/blog/vagrant-global-configuration-and-plugins&text=Vagrant global configuration and plugins&via=rag_s" target="_blank">
+<a href="https://twitter.com/intent/tweet?url=http://raghusiddarth.com/blog/testing-mutually-exclusive-options&text=Test for mutually exclusive options in shell scripts&via=rag_s" target="_blank">
     share it with your followers</a>
 or
 <a href="https://twitter.com/rag_s">
@@ -162,9 +138,9 @@ or
     
       <li>
         <h3>
-          <a href="/blog/testing-mutually-exclusive-options">
-            Test for mutually exclusive options in shell scripts
-            <small>30 May 2015</small>
+          <a href="/blog/vagrant-global-configuration-and-plugins">
+            Vagrant global configuration and plugins
+            <small>11 May 2015</small>
           </a>
         </h3>
       </li>
@@ -195,7 +171,7 @@ or
 <div id="disqus_thread"></div>
 <script type="text/javascript">
   var disqus_shortname = 'raghusiddarth';
-  // var disqus_identifier = "/blog/vagrant-global-configuration-and-plugins";
+  // var disqus_identifier = "/blog/testing-mutually-exclusive-options";
 
       /* * * DON'T EDIT BELOW THIS LINE * * */
       (function() {
